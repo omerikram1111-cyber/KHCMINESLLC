@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>KHC MINES LLC | NexCore ERP v3.1</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "surface-container-lowest": "#0c0e10",
+        "surface-dim": "#121416",
+        "background": "#121416",
+        "on-surface": "#e2e2e5",
+        "outline": "#999077",
+        "secondary": "#ffb77d",
+        "surface-tint": "#e9c400",
+        "on-secondary": "#4d2600",
+        "surface-container-low": "#1a1c1e",
+        "primary": "#fff6df",
+        "on-background": "#e2e2e5",
+        "surface-bright": "#37393b",
+        "primary-container": "#ffd700",
+        "on-primary-container": "#705e00",
+        "surface-container-highest": "#333537",
+        "surface": "#121416",
+        "error-container": "#93000a",
+        "surface-container": "#1e2022",
+        "surface-container-high": "#282a2c",
+        "on-secondary-container": "#603100",
+        "on-error-container": "#ffdad6",
+        "error": "#ffb4ab",
+        "secondary-container": "#fd8b00",
+        "surface-variant": "#333537",
+        "on-surface-variant": "#d0c6ab",
+      },
+      fontFamily: {
+        "data-mono": ["Space Grotesk"],
+        "label-caps": ["Space Grotesk"],
+        "body-base": ["Inter"],
+        "headline-md": ["Inter"],
+      },
+      fontSize: {
+        "data-mono": ["14px", {"lineHeight":"1.4","letterSpacing":"0.05em","fontWeight":"500"}],
+        "label-caps": ["12px", {"lineHeight":"1","fontWeight":"700"}],
+      }
+    }
+  }
+}
+</script>
+<style>
+body { background-color: #121416; }
+.material-symbols-outlined { font-variation-settings: 'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+.status-header-green { border-top: 4px solid #10b981; }
+.status-header-amber { border-top: 4px solid #f59e0b; }
+.status-header-red { border-top: 4px solid #ef4444; }
+.status-header-blue { border-top: 4px solid #3b82f6; }
+.industrial-grid { background-image: radial-gradient(#1e2530 1px, transparent 1px); background-size: 24px 24px; }
+.page { display: none; }
+.page.active { display: block; }
+.nav-link { cursor: pointer; }
+.sidebar-link { cursor: pointer; }
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200; align-items:center; justify-content:center; }
+.modal-overlay.open { display:flex; }
+.toast { position:fixed; bottom:24px; right:24px; z-index:300; transform:translateX(120%); transition:transform 0.3s ease; }
+.toast.show { transform:translateX(0); }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.blink { animation: blink 1.5s infinite; }
+.telemetry-line { animation: fadeIn 0.5s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+.health-bar-fill { transition: width 1s ease; }
+</style>
+</head>
+<body class="font-body-base text-on-surface">
+
+<!-- TOAST NOTIFICATION -->
+<div class="toast" id="toast">
+  <div class="bg-slate-800 border border-yellow-500/50 px-4 py-3 flex items-center gap-3 shadow-2xl">
+    <span class="material-symbols-outlined text-yellow-500 text-sm" id="toast-icon">check_circle</span>
+    <span class="text-xs font-bold text-white" id="toast-msg">Action completed</span>
+    <button onclick="hideToast()" class="ml-2 text-slate-500 hover:text-white">✕</button>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" onclick="closeModal()">
+  <div class="bg-slate-900 border border-slate-700 p-6 w-full max-w-md mx-4" onclick="event.stopPropagation()">
+    <div class="flex justify-between items-start mb-4">
+      <h3 class="text-sm font-black text-yellow-500 uppercase tracking-widest" id="modal-title">Modal</h3>
+      <button onclick="closeModal()" class="text-slate-500 hover:text-white">✕</button>
+    </div>
+    <div id="modal-body" class="text-sm text-slate-300 space-y-3"></div>
+    <div class="flex gap-3 mt-6">
+      <button onclick="closeModal()" class="flex-1 bg-yellow-500 text-black text-xs font-black uppercase py-2 hover:opacity-90">Confirm</button>
+      <button onclick="closeModal()" class="flex-1 bg-slate-800 text-slate-300 text-xs font-black uppercase py-2 border border-slate-700 hover:bg-slate-700">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOP APP BAR -->
+<header class="fixed top-0 w-full z-50 bg-slate-950 border-b border-slate-800 flex justify-between items-center px-6 h-16">
+  <div class="flex items-center gap-8">
+    <span class="text-xl font-black tracking-tighter text-yellow-500 cursor-pointer" onclick="switchPage('dashboard')">KHC MINES LLC</span>
+    <nav class="hidden md:flex items-center gap-1 h-full">
+      <span class="nav-link font-inter tracking-tight uppercase text-xs font-bold px-3 py-1 transition-colors" data-page="dashboard" onclick="switchPage('dashboard')">Command Center</span>
+      <span class="nav-link font-inter tracking-tight uppercase text-xs font-bold px-3 py-1 transition-colors" data-page="assets" onclick="switchPage('assets')">Assets</span>
+      <span class="nav-link font-inter tracking-tight uppercase text-xs font-bold px-3 py-1 transition-colors" data-page="workforce" onclick="switchPage('workforce')">Workforce</span>
+      <span class="nav-link font-inter tracking-tight uppercase text-xs font-bold px-3 py-1 transition-colors" data-page="compliance" onclick="switchPage('compliance')">Compliance</span>
+      <span class="nav-link font-inter tracking-tight uppercase text-xs font-bold px-3 py-1 transition-colors" data-page="ai" onclick="switchPage('ai')">AI Insights</span>
+    </nav>
+  </div>
+  <div class="flex items-center gap-6">
+    <div class="text-right">
+      <div class="text-yellow-500 font-data-mono text-xs font-bold" id="live-clock">14:30 SAST</div>
+      <div class="flex items-center gap-2 text-[10px] uppercase tracking-widest text-emerald-500 font-bold">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>System Ready
+      </div>
+    </div>
+    <div class="flex items-center gap-3 border-l border-slate-800 pl-6">
+      <div class="relative cursor-pointer" onclick="showToast('You have 3 unread alerts','warning')">
+        <span class="material-symbols-outlined text-slate-400 hover:text-yellow-500 transition-colors">notifications</span>
+        <span class="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full text-[9px] font-black text-white flex items-center justify-center">3</span>
+      </div>
+      <div class="flex items-center gap-3 cursor-pointer" onclick="openModal('User Profile','<div class=\'space-y-2\'><p><span class=\'text-slate-500\'>Name:</span> M. Umer</p><p><span class=\'text-slate-500\'>Role:</span> Systems Architect</p><p><span class=\'text-slate-500\'>Clearance:</span> Level 5 — Full Access</p><p><span class=\'text-slate-500\'>Last Login:</span> Today 08:14 SAST</p><p><span class=\'text-slate-500\'>Sector:</span> 7G Deep Level</p></div>')">
+        <div class="text-right hidden lg:block">
+          <div class="text-[11px] font-bold text-white leading-none">M. Umer</div>
+          <div class="text-[9px] text-slate-500 uppercase tracking-tighter">Systems Architect</div>
+        </div>
+        <div class="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-black font-black text-xs">MU</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- SIDEBAR -->
+<aside class="fixed left-0 top-0 h-full w-64 bg-slate-950 border-r border-slate-800 flex flex-col pt-20 z-40">
+  <div class="px-6 mb-6">
+    <div class="flex items-center gap-3 mb-1">
+      <span class="material-symbols-outlined text-yellow-500">settings_input_component</span>
+      <span class="text-yellow-500 font-black text-sm tracking-widest">OPS COMMAND</span>
+    </div>
+    <p class="text-[10px] text-slate-500 uppercase tracking-widest">Sector 7G - Deep Level</p>
+  </div>
+  <nav class="flex-1 flex flex-col" id="sidebar-nav">
+    <span class="sidebar-link flex items-center px-6 py-3 font-inter uppercase text-[11px] font-semibold tracking-widest transition-all" data-page="dashboard" onclick="switchPage('dashboard')">
+      <span class="material-symbols-outlined mr-4">dashboard</span>Dashboard
+    </span>
+    <span class="sidebar-link flex items-center px-6 py-3 font-inter uppercase text-[11px] font-semibold tracking-widest transition-all" data-page="shafts" onclick="switchPage('shafts')">
+      <span class="material-symbols-outlined mr-4">settings_input_component</span>Shaft Monitor
+    </span>
+    <span class="sidebar-link flex items-center px-6 py-3 font-inter uppercase text-[11px] font-semibold tracking-widest transition-all" data-page="assets" onclick="switchPage('assets')">
+      <span class="material-symbols-outlined mr-4">precision_manufacturing</span>Equipment
+    </span>
+    <span class="sidebar-link flex items-center px-6 py-3 font-inter uppercase text-[11px] font-semibold tracking-widest transition-all" data-page="blast" onclick="switchPage('blast')">
+      <span class="material-symbols-outlined mr-4">bolt</span>Blast Schedule
+    </span>
+    <span class="sidebar-link flex items-center px-6 py-3 font-inter uppercase text-[11px] font-semibold tracking-widest transition-all" data-page="workforce" onclick="switchPage('workforce')">
+      <span class="material-symbols-outlined mr-4">verified_user</span>Safety
+    </span>
+    <span class="sidebar-link flex items-center px-6 py-3 font-inter uppercase text-[11px] font-semibold tracking-widest transition-all" data-page="compliance" onclick="switchPage('compliance')">
+      <span class="material-symbols-outlined mr-4">analytics</span>Reports
+    </span>
+    <span class="sidebar-link flex items-center px-6 py-3 font-inter uppercase text-[11px] font-semibold tracking-widest transition-all" data-page="ai" onclick="switchPage('ai')">
+      <span class="material-symbols-outlined mr-4">psychology</span>AI Insights
+    </span>
+  </nav>
+  <div class="border-t border-slate-900 p-4 space-y-1">
+    <span class="flex items-center px-2 py-2 text-slate-500 hover:text-slate-200 cursor-pointer font-inter uppercase text-[10px] font-semibold tracking-widest transition-colors" onclick="showToast('Opening support portal...','info')">
+      <span class="material-symbols-outlined mr-3 text-sm">help</span>Support
+    </span>
+    <span class="flex items-center px-2 py-2 text-slate-500 hover:text-slate-200 cursor-pointer font-inter uppercase text-[10px] font-semibold tracking-widest transition-colors" onclick="switchPage('logs')">
+      <span class="material-symbols-outlined mr-3 text-sm">terminal</span>Logs
+    </span>
+  </div>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main class="ml-64 pt-16 min-h-screen industrial-grid">
+
+<!-- ==================== PAGE: DASHBOARD ==================== -->
+<div id="page-dashboard" class="page active p-6 space-y-6">
+  <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <div class="bg-surface-container-low border border-slate-800 p-4 status-header-green cursor-pointer hover:border-emerald-500/50 transition-colors" onclick="switchPage('shafts')">
+      <span class="text-label-caps text-slate-500 block mb-1">ACTIVE SHAFTS</span>
+      <div class="flex items-baseline gap-2">
+        <span class="text-3xl font-data-mono font-bold text-on-surface">4/6</span>
+        <span class="text-[10px] text-emerald-500 font-bold uppercase">Optimal</span>
+      </div>
+      <div class="text-[9px] text-slate-600 mt-1">Click to view →</div>
+    </div>
+    <div class="bg-surface-container-low border border-slate-800 p-4 status-header-green cursor-pointer hover:border-yellow-500/50 transition-colors" onclick="switchPage('compliance')">
+      <span class="text-label-caps text-slate-500 block mb-1">TODAY'S ORE OUTPUT</span>
+      <div class="flex items-baseline gap-2">
+        <span class="text-3xl font-data-mono font-bold text-on-surface" id="ore-output">2,847</span>
+        <span class="text-[10px] text-emerald-500 font-bold uppercase">↑ 12%</span>
+      </div>
+      <div class="text-[9px] text-slate-600 mt-1">Tonnes · Shift 2B</div>
+    </div>
+    <div class="bg-surface-container-low border border-slate-800 p-4 status-header-green cursor-pointer hover:border-blue-500/50 transition-colors" onclick="switchPage('workforce')">
+      <span class="text-label-caps text-slate-500 block mb-1">PERSONNEL UNDERGROUND</span>
+      <div class="flex items-baseline gap-2">
+        <span class="text-3xl font-data-mono font-bold text-on-surface">312</span>
+        <span class="text-[10px] text-slate-400 font-bold uppercase">Shift 2B</span>
+      </div>
+      <div class="text-[9px] text-slate-600 mt-1">Click to view →</div>
+    </div>
+    <div class="bg-surface-container-low border border-slate-800 p-4 status-header-green cursor-pointer hover:border-emerald-500/50 transition-colors" onclick="switchPage('assets')">
+      <span class="text-label-caps text-slate-500 block mb-1">EQUIPMENT UPTIME</span>
+      <div class="flex items-baseline gap-2">
+        <span class="text-3xl font-data-mono font-bold text-emerald-500">91.4%</span>
+        <span class="text-[10px] text-slate-400 font-bold uppercase">Target 90%</span>
+      </div>
+      <div class="text-[9px] text-slate-600 mt-1">47 units active</div>
+    </div>
+    <div class="bg-surface-container-low border border-slate-800 p-4 status-header-amber cursor-pointer hover:border-orange-500/50 transition-colors" onclick="showAlerts()">
+      <span class="text-label-caps text-slate-500 block mb-1">CRITICAL ALERTS</span>
+      <div class="flex items-baseline gap-2">
+        <span class="text-3xl font-data-mono font-bold text-orange-400 blink" id="alert-count">03</span>
+        <span class="text-[10px] text-orange-400 font-bold uppercase">Attention</span>
+      </div>
+      <div class="text-[9px] text-slate-600 mt-1">Click to review →</div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-12 gap-6">
+    <!-- Shaft Status -->
+    <div class="col-span-12 lg:col-span-5 bg-surface-container-low border border-slate-800 flex flex-col">
+      <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+        <h2 class="text-label-caps tracking-widest text-yellow-500">SHAFT STATUS MONITOR</h2>
+        <span class="material-symbols-outlined text-slate-500 text-sm cursor-pointer hover:text-yellow-500 transition-colors" onclick="refreshShafts()">refresh</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left">
+          <thead class="bg-surface-container border-b border-slate-800">
+            <tr>
+              <th class="p-3 text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Shaft ID</th>
+              <th class="p-3 text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Depth (m)</th>
+              <th class="p-3 text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Staff</th>
+              <th class="p-3 text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Rate</th>
+              <th class="p-3 text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Status</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800" id="shaft-table">
+            <tr class="hover:bg-slate-900/30 transition-colors cursor-pointer" onclick="openShaftDetail('SHAFT-NORTH','1,240m','48 workers','420 t/h','Active','Thabo Nkosi')">
+              <td class="p-3 text-xs font-bold text-on-surface">SHAFT-NORTH</td>
+              <td class="p-3 text-xs font-data-mono">1,240</td>
+              <td class="p-3 text-xs font-data-mono">48</td>
+              <td class="p-3 text-xs font-data-mono text-emerald-500">420 t/h</td>
+              <td class="p-3"><span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase border border-emerald-500/20">Active</span></td>
+            </tr>
+            <tr class="hover:bg-slate-900/30 transition-colors cursor-pointer" onclick="openShaftDetail('SHAFT-EAST','1,890m','62 workers','510 t/h','Active','Johan Coetzee')">
+              <td class="p-3 text-xs font-bold text-on-surface">SHAFT-EAST</td>
+              <td class="p-3 text-xs font-data-mono">1,890</td>
+              <td class="p-3 text-xs font-data-mono">62</td>
+              <td class="p-3 text-xs font-data-mono text-emerald-500">510 t/h</td>
+              <td class="p-3"><span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase border border-emerald-500/20">Active</span></td>
+            </tr>
+            <tr class="hover:bg-slate-900/30 transition-colors bg-slate-900/20 cursor-pointer" onclick="openShaftDetail('WEST-AUX','920m','8 workers','--','Maintenance','Pieter van der Berg')">
+              <td class="p-3 text-xs font-bold text-on-surface">WEST-AUX</td>
+              <td class="p-3 text-xs font-data-mono">920</td>
+              <td class="p-3 text-xs font-data-mono">08</td>
+              <td class="p-3 text-xs font-data-mono text-secondary">--</td>
+              <td class="p-3"><span class="px-2 py-0.5 bg-secondary/10 text-secondary text-[9px] font-black uppercase border border-secondary/20">Maint.</span></td>
+            </tr>
+            <tr class="hover:bg-slate-900/30 transition-colors cursor-pointer" onclick="openShaftDetail('CENTRAL-CORE','2,450m','94 workers','890 t/h','Active','Nomvula Dlamini')">
+              <td class="p-3 text-xs font-bold text-on-surface">CENTRAL-CORE</td>
+              <td class="p-3 text-xs font-data-mono">2,450</td>
+              <td class="p-3 text-xs font-data-mono">94</td>
+              <td class="p-3 text-xs font-data-mono text-emerald-500">890 t/h</td>
+              <td class="p-3"><span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase border border-emerald-500/20">Active</span></td>
+            </tr>
+            <tr class="hover:bg-slate-900/30 transition-colors cursor-pointer" onclick="openShaftDetail('DEEP-LEVEL-01','3,100m','54 workers','340 t/h','Active','Sipho Mahlangu')">
+              <td class="p-3 text-xs font-bold text-on-surface">DEEP-LEVEL-01</td>
+              <td class="p-3 text-xs font-data-mono">3,100</td>
+              <td class="p-3 text-xs font-data-mono">54</td>
+              <td class="p-3 text-xs font-data-mono text-emerald-500">340 t/h</td>
+              <td class="p-3"><span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase border border-emerald-500/20">Active</span></td>
+            </tr>
+            <tr class="hover:bg-slate-900/30 transition-colors cursor-pointer" onclick="openShaftDetail('RESERVE-STK','450m','12 workers','--','Idle','—')">
+              <td class="p-3 text-xs font-bold text-on-surface">RESERVE-STK</td>
+              <td class="p-3 text-xs font-data-mono">450</td>
+              <td class="p-3 text-xs font-data-mono">12</td>
+              <td class="p-3 text-xs font-data-mono text-slate-500">--</td>
+              <td class="p-3"><span class="px-2 py-0.5 bg-slate-800 text-slate-400 text-[9px] font-black uppercase border border-slate-700">Idle</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mt-auto p-4 border-t border-slate-800 bg-slate-900/20">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Total Active Workforce Engagement</span>
+          <span class="text-[10px] text-yellow-500 font-data-mono">88% Capacity</span>
+        </div>
+        <div class="w-full bg-slate-800 h-1"><div class="bg-yellow-500 h-1 w-[88%]"></div></div>
+      </div>
+    </div>
+
+    <!-- Production Chart + Blast -->
+    <div class="col-span-12 lg:col-span-4 space-y-6">
+      <div class="bg-surface-container-low border border-slate-800 p-4">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-label-caps tracking-widest text-yellow-500 uppercase">Production 7-Day Trend</h2>
+          <span class="text-[9px] text-slate-500 uppercase font-bold">▪ Tonnes</span>
+        </div>
+        <div class="h-48 flex items-end justify-between gap-1" id="prod-chart">
+          <div class="flex-1 flex flex-col items-center gap-1">
+            <span class="text-[8px] text-slate-600 font-data-mono">2,410</span>
+            <div class="w-full bg-yellow-500/20 border-t border-yellow-500/40 hover:bg-yellow-500/40 transition-colors cursor-pointer" style="height:60%" onclick="showToast('Monday: 2,410 tonnes produced','info')"></div>
+          </div>
+          <div class="flex-1 flex flex-col items-center gap-1">
+            <span class="text-[8px] text-slate-600 font-data-mono">2,531</span>
+            <div class="w-full bg-yellow-500/30 border-t border-yellow-500/50 hover:bg-yellow-500/40 transition-colors cursor-pointer" style="height:75%" onclick="showToast('Tuesday: 2,531 tonnes produced','info')"></div>
+          </div>
+          <div class="flex-1 flex flex-col items-center gap-1">
+            <span class="text-[8px] text-slate-600 font-data-mono">2,490</span>
+            <div class="w-full bg-yellow-500/20 border-t border-yellow-500/40 hover:bg-yellow-500/40 transition-colors cursor-pointer" style="height:65%" onclick="showToast('Wednesday: 2,490 tonnes produced','info')"></div>
+          </div>
+          <div class="flex-1 flex flex-col items-center gap-1">
+            <span class="text-[8px] text-slate-600 font-data-mono">2,680</span>
+            <div class="w-full bg-yellow-500/40 border-t border-yellow-500/60 hover:bg-yellow-500/50 transition-colors cursor-pointer" style="height:85%" onclick="showToast('Thursday: 2,680 tonnes produced','info')"></div>
+          </div>
+          <div class="flex-1 flex flex-col items-center gap-1">
+            <span class="text-[8px] text-slate-600 font-data-mono">2,791</span>
+            <div class="w-full bg-yellow-500/50 border-t border-yellow-500/70 hover:bg-yellow-500/60 transition-colors cursor-pointer" style="height:95%" onclick="showToast('Friday: 2,791 tonnes produced','info')"></div>
+          </div>
+          <div class="flex-1 flex flex-col items-center gap-1">
+            <span class="text-[8px] text-slate-600 font-data-mono">2,603</span>
+            <div class="w-full bg-yellow-500/40 border-t border-yellow-500/60 hover:bg-yellow-500/50 transition-colors cursor-pointer" style="height:80%" onclick="showToast('Saturday: 2,603 tonnes produced','info')"></div>
+          </div>
+          <div class="flex-1 flex flex-col items-center gap-1">
+            <span class="text-[8px] text-yellow-400 font-data-mono font-bold">2,847</span>
+            <div class="w-full bg-yellow-500 border-t-2 border-yellow-400 hover:bg-yellow-400 transition-colors cursor-pointer" style="height:100%" onclick="showToast('Today: 2,847 tonnes — record shift!','success')"></div>
+          </div>
+        </div>
+        <div class="flex justify-between mt-2 text-[9px] text-slate-500 font-bold uppercase tracking-tighter">
+          <span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span>
+        </div>
+      </div>
+      <div class="bg-surface-container-low border border-slate-800 p-4">
+        <h2 class="text-label-caps tracking-widest text-yellow-500 uppercase mb-4">Blast Schedule Today</h2>
+        <div class="space-y-4">
+          <div class="relative pl-4 border-l-2 border-emerald-500 cursor-pointer hover:bg-slate-900/30 p-2 transition-colors" onclick="openModal('Blast Detail — Sector 7G North Face','<div class=\'space-y-2 text-xs\'><p><span class=\'text-slate-500\'>Status:</span> <span class=\'text-emerald-500 font-bold\'>COMPLETED</span></p><p><span class=\'text-slate-500\'>Charge Weight:</span> 840 kg ANFO</p><p><span class=\'text-slate-500\'>Clearance Officer:</span> P. van der Berg</p><p><span class=\'text-slate-500\'>All-clear issued:</span> 11:42 SAST</p><p><span class=\'text-slate-500\'>Re-entry time:</span> 12:10 SAST</p><p><span class=\'text-slate-500\'>Result:</span> Successful — 480 tonnes ore displaced</p></div>')">
+            <div class="flex justify-between items-start">
+              <div>
+                <div class="text-xs font-bold text-on-surface uppercase">Sector 7G North Face</div>
+                <div class="text-[10px] text-slate-500 font-data-mono">T-Minus: COMPLETED</div>
+              </div>
+              <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase border border-emerald-500/20">Approved</span>
+            </div>
+          </div>
+          <div class="relative pl-4 border-l-2 border-emerald-500 cursor-pointer hover:bg-slate-900/30 p-2 transition-colors" onclick="openModal('Blast Detail — Deep Level Shaft 4','<div class=\'space-y-2 text-xs\'><p><span class=\'text-slate-500\'>Scheduled:</span> 16:00 SAST</p><p><span class=\'text-slate-500\'>Charge Weight:</span> 1,120 kg ANFO</p><p><span class=\'text-slate-500\'>Clearance Officer:</span> Sipho Mahlangu</p><p><span class=\'text-slate-500\'>Personnel Cleared:</span> Yes — 54 workers at surface</p><p><span class=\'text-slate-500\'>Status:</span> Pre-blast checklist complete</p></div>')">
+            <div class="flex justify-between items-start">
+              <div>
+                <div class="text-xs font-bold text-on-surface uppercase">Deep Level Shaft 4</div>
+                <div class="text-[10px] text-slate-500 font-data-mono">Time: 16:00 SAST</div>
+              </div>
+              <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase border border-emerald-500/20">Approved</span>
+            </div>
+          </div>
+          <div class="relative pl-4 border-l-2 border-orange-500 cursor-pointer hover:bg-slate-900/30 p-2 transition-colors" onclick="openModal('Blast Detail — Reserve East Extension','<div class=\'space-y-2 text-xs\'><p><span class=\'text-slate-500\'>Scheduled:</span> 22:30 SAST</p><p><span class=\'text-slate-500\'>Charge Weight:</span> 650 kg ANFO</p><p><span class=\'text-slate-500\'>Status:</span> <span class=\'text-orange-400 font-bold\'>PENDING — awaiting inspector sign-off</span></p><p><span class=\'text-slate-500\'>Inspector:</span> Nomvula Dlamini</p><p class=\'text-orange-400\'>⚠ Cannot proceed without MHSA clearance</p></div>')">
+            <div class="flex justify-between items-start">
+              <div>
+                <div class="text-xs font-bold text-on-surface uppercase">Reserve East Extension</div>
+                <div class="text-[10px] text-slate-500 font-data-mono">Time: 22:30 SAST</div>
+              </div>
+              <span class="px-2 py-0.5 bg-orange-500/10 text-orange-400 text-[9px] font-black uppercase border border-orange-500/20">Pending</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alerts -->
+    <div class="col-span-12 lg:col-span-3 bg-surface-container-low border border-slate-800 flex flex-col">
+      <div class="p-4 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between">
+        <h2 class="text-label-caps tracking-widest text-orange-400 uppercase">Live System Alerts</h2>
+        <span class="material-symbols-outlined text-orange-400 text-sm blink">warning</span>
+      </div>
+      <div class="p-4 space-y-4 overflow-y-auto max-h-[500px]" id="alerts-feed">
+        <div class="p-3 bg-red-950/30 border border-red-500/30 cursor-pointer hover:border-red-500/60 transition-colors" onclick="openModal('CRITICAL — Ventilation Alert','<div class=\'space-y-2 text-xs\'><p class=\'text-red-400 font-bold\'>⚠ CRITICAL — Immediate action required</p><p><span class=\'text-slate-500\'>Location:</span> Shaft 4, Sub-Level 2</p><p><span class=\'text-slate-500\'>Reading:</span> O₂ at 19.2% (threshold: 19.5%)</p><p><span class=\'text-slate-500\'>Trend:</span> Declining at -0.1%/hour</p><p><span class=\'text-slate-500\'>Action:</span> Auxiliary fan activation initiated</p><p><span class=\'text-slate-500\'>Duty Officer:</span> P. van der Berg notified</p></div>')">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="material-symbols-outlined text-red-400 text-xs">air</span>
+            <span class="text-[10px] font-black text-red-400 uppercase">Critical Ventilation</span>
+            <button class="ml-auto text-slate-600 hover:text-slate-400 text-xs" onclick="dismissAlert(event,this)">✕</button>
+          </div>
+          <p class="text-[11px] text-on-surface leading-snug">Airflow drop in Shaft 4, Sub-Level 2. O₂ declining.</p>
+          <div class="mt-2 text-[9px] text-slate-500 font-data-mono">14:28:12 SAST</div>
+        </div>
+        <div class="p-3 bg-orange-950/30 border border-orange-500/30 cursor-pointer hover:border-orange-500/60 transition-colors" onclick="openModal('WARNING — Conveyor Belt','<div class=\'space-y-2 text-xs\'><p><span class=\'text-slate-500\'>Asset:</span> Main Incline Conveyor — SUR-C-002</p><p><span class=\'text-slate-500\'>Issue:</span> Belt slippage detected, motor heat rising</p><p><span class=\'text-slate-500\'>Motor Temp:</span> 82°C (normal: &lt;70°C)</p><p><span class=\'text-slate-500\'>Action:</span> Reduce load by 30% until inspection</p><p><span class=\'text-slate-500\'>Assigned:</span> L. Sibiya — Workshop</p></div>')">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="material-symbols-outlined text-orange-400 text-xs">settings_input_component</span>
+            <span class="text-[10px] font-black text-orange-400 uppercase">Conveyor Warning</span>
+            <button class="ml-auto text-slate-600 hover:text-slate-400 text-xs" onclick="dismissAlert(event,this)">✕</button>
+          </div>
+          <p class="text-[11px] text-on-surface leading-snug">Slipped belt on Main Incline. Motor 82°C.</p>
+          <div class="mt-2 text-[9px] text-slate-500 font-data-mono">14:15:05 SAST</div>
+        </div>
+        <div class="p-3 bg-blue-950/30 border border-blue-500/30 cursor-pointer hover:border-blue-500/60 transition-colors" onclick="switchPage('ai')">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="material-symbols-outlined text-blue-400 text-xs">psychology</span>
+            <span class="text-[10px] font-black text-blue-400 uppercase">AI Predictive</span>
+            <button class="ml-auto text-slate-600 hover:text-slate-400 text-xs" onclick="dismissAlert(event,this)">✕</button>
+          </div>
+          <p class="text-[11px] text-on-surface leading-snug">Crusher bearing failure within 48-72hrs. Scheduled.</p>
+          <div class="mt-2 text-[9px] text-slate-500 font-data-mono">13:58:44 SAST</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shift Table -->
+  <div class="bg-surface-container-low border border-slate-800">
+    <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+      <h2 class="text-label-caps tracking-widest text-yellow-500">SHIFT MANAGEMENT — OVERSIGHT</h2>
+      <button class="bg-yellow-500 text-black px-4 py-1 text-[10px] font-black uppercase flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all" onclick="openModal('New Shift Entry','<div class=\'space-y-3\'><div><label class=\'text-[10px] text-slate-500 uppercase font-bold\'>Supervisor Name</label><div class=\'mt-1 bg-slate-800 border border-slate-700 p-2 text-xs text-slate-300\'>Enter name...</div></div><div><label class=\'text-[10px] text-slate-500 uppercase font-bold\'>Assignment Zone</label><div class=\'mt-1 bg-slate-800 border border-slate-700 p-2 text-xs text-slate-300\'>Select zone...</div></div><div><label class=\'text-[10px] text-slate-500 uppercase font-bold\'>Personnel Count</label><div class=\'mt-1 bg-slate-800 border border-slate-700 p-2 text-xs text-slate-300\'>0</div></div></div>')">
+        <span class="material-symbols-outlined text-xs">assignment_ind</span>New Shift Entry
+      </button>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left">
+        <thead class="bg-surface-container border-b border-slate-800">
+          <tr>
+            <th class="p-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Supervisor</th>
+            <th class="p-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Assignment</th>
+            <th class="p-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Personnel</th>
+            <th class="p-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Hours Remain</th>
+            <th class="p-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Safety Rating</th>
+            <th class="p-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-800">
+          <tr class="hover:bg-slate-900/30 transition-colors cursor-pointer" onclick="openModal('Shift Detail — Thabo Nkosi','<div class=\'space-y-2 text-xs\'><p><span class=\'text-slate-500\'>Supervisor:</span> Thabo Nkosi</p><p><span class=\'text-slate-500\'>Zone:</span> Central Core Drifting</p><p><span class=\'text-slate-500\'>Personnel:</span> 112 workers</p><p><span class=\'text-slate-500\'>Shift Start:</span> 06:00 SAST</p><p><span class=\'text-slate-500\'>Hours Remaining:</span> 03:30</p><p><span class=\'text-slate-500\'>Safety Score:</span> 4/5 — Good</p><p><span class=\'text-slate-500\'>Incidents Today:</span> 0</p></div>')">
+            <td class="p-4 flex items-center gap-3"><div class="w-8 h-8 bg-slate-800 flex items-center justify-center font-bold text-yellow-500 text-xs">TN</div><div class="text-xs font-bold text-on-surface">Thabo Nkosi</div></td>
+            <td class="p-4 text-xs text-slate-300">Central Core Drifting</td>
+            <td class="p-4 text-xs font-data-mono">112</td>
+            <td class="p-4 text-xs font-data-mono" id="shift1-hrs">03:30</td>
+            <td class="p-4"><div class="flex gap-1"><div class="w-1 h-3 bg-emerald-500"></div><div class="w-1 h-3 bg-emerald-500"></div><div class="w-1 h-3 bg-emerald-500"></div><div class="w-1 h-3 bg-emerald-500"></div><div class="w-1 h-3 bg-slate-700"></div></div></td>
+            <td class="p-4"><span class="material-symbols-outlined text-slate-500 cursor-pointer hover:text-white">more_horiz</span></td>
+          </tr>
+          <tr class="hover:bg-slate-900/30 transition-colors cursor-pointer" onclick="openModal('Shift Detail — Pieter van der Berg','<div class=\'space-y-2 text-xs\'><p><span class=\'text-slate-500\'>Supervisor:</span> Pieter van der Berg</p><p><span class=\'text-slate-500\'>Zone:</span> Maintenance & Aux</p><p><span class=\'text-slate-500\'>Personnel:</span> 42 workers</p><p><span class=\'text-slate-500\'>Shift Start:</span> 04:00 SAST</p><p><span class=\'text-slate-500\'>Hours Remaining:</span> 05:15</p><p><span class=\'text-slate-500\'>Safety Score:</span> 5/5 — Excellent</p><p><span class=\'text-slate-500\'>Incidents Today:</span> 0</p></div>')">
+            <td class="p-4 flex items-center gap-3"><div class="w-8 h-8 bg-slate-800 flex items-center justify-center font-bold text-yellow-500 text-xs">PB</div><div class="text-xs font-bold text-on-surface">Pieter van der Berg</div></td>
+            <td class="p-4 text-xs text-slate-300">Maintenance & Aux</td>
+            <td class="p-4 text-xs font-data-mono">42</td>
+            <td class="p-4 text-xs font-data-mono">05:15</td>
+            <td class="p-4"><div class="flex gap-1"><div class="w-1 h-3 bg-emerald-500"></div><div class="w-1 h-3 bg-emerald-500"></div><div class="w-1 h-3 bg-emerald-500"></div><div class="w-1 h-3 bg-emerald-500"></div><div class="w-1 h-3 bg-emerald-500"></div></div></td>
+            <td class="p-4"><span class="material-symbols-outlined text-slate-500 cursor-pointer hover:text-white">more_horiz</span></td>
+          </tr>
+          <tr class="hover:bg-slate-900/30 transition-colors cursor-pointer" onclick="openModal('Shift Detail — Nomvula Dlamini','<div class=\'space-y-2 text-xs\'><p><span class=\'text-slate-500\'>Supervisor:</span> Nomvula Dlamini</p><p><span class=\'text-slate-500\'>Zone:</span> Deep Level Extraction</p><p><span class=\'text-slate-500\'>Personnel:</span> 158 workers</p><p><span class=\'text-slate-500\'>Shift Start:</span> 12:00 SAST</p><p><span class=\'text-slate-500\'>Hours Remaining:</span> 02:45</p><p><span class=\'text-slate-500\'>Safety Score:</span> 2/5 — Needs Review</p><p><span class=\'text-slate-500\'>Active Incidents:</span> 1 — near-miss logged</p></div>')">
+            <td class="p-4 flex items-center gap-3"><div class="w-8 h-8 bg-slate-800 flex items-center justify-center font-bold text-yellow-500 text-xs">ND</div><div class="text-xs font-bold text-on-surface">Nomvula Dlamini</div></td>
+            <td class="p-4 text-xs text-slate-300">Deep Level Extraction</td>
+            <td class="p-4 text-xs font-data-mono">158</td>
+            <td class="p-4 text-xs font-data-mono">02:45</td>
+            <td class="p-4"><div class="flex gap-1"><div class="w-1 h-3 bg-emerald-500"></div><div class="w-1 h-3 bg-emerald-500"></div><div class="w-1 h-3 bg-secondary"></div><div class="w-1 h-3 bg-slate-700"></div><div class="w-1 h-3 bg-slate-700"></div></div></td>
+            <td class="p-4"><span class="material-symbols-outlined text-slate-500 cursor-pointer hover:text-white">more_horiz</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer class="p-4 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+    <div class="flex items-center gap-4">
+      <span>KHC Mines LLC — Gauteng, South Africa</span>
+      <span class="text-slate-700">|</span>
+      <span>NexCore ERP v3.1</span>
+    </div>
+    <div class="flex items-center gap-6">
+      <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>MHSA Compliant</div>
+      <span>© 2024 Industrial Systems Group</span>
+    </div>
+  </footer>
+</div>
+
+<!-- ==================== PAGE: ASSETS ==================== -->
+<div id="page-assets" class="page p-6 space-y-6">
+  <div class="flex justify-between items-start">
+    <div>
+      <h1 class="text-xl font-black text-on-surface uppercase tracking-tight">Heavy Equipment Registry</h1>
+      <p class="text-xs text-slate-500 mt-1">KHC Mines LLC — Total Fleet: 47 Units</p>
+    </div>
+    <div class="flex gap-3 items-center">
+      <span class="px-3 py-1 bg-yellow-500/10 text-yellow-500 text-[10px] font-black uppercase border border-yellow-500/30">Total Fleet: 47 Units</span>
+      <span class="px-3 py-1 bg-red-900/30 text-red-400 text-[10px] font-black uppercase border border-red-500/30 blink">⚠ 3 Units Due Maintenance</span>
+    </div>
+  </div>
+  <!-- Filter buttons -->
+  <div class="flex gap-2 flex-wrap">
+    <button class="asset-filter active px-3 py-1 text-[10px] font-black uppercase border transition-colors" data-filter="all" onclick="filterAssets('all',this)">All Equipment</button>
+    <button class="asset-filter px-3 py-1 text-[10px] font-black uppercase border border-slate-700 text-slate-400 hover:border-slate-500 transition-colors" data-filter="underground" onclick="filterAssets('underground',this)">Underground</button>
+    <button class="asset-filter px-3 py-1 text-[10px] font-black uppercase border border-slate-700 text-slate-400 hover:border-slate-500 transition-colors" data-filter="surface" onclick="filterAssets('surface',this)">Surface</button>
+    <button class="asset-filter px-3 py-1 text-[10px] font-black uppercase border border-slate-700 text-slate-400 hover:border-slate-500 transition-colors" data-filter="maintenance" onclick="filterAssets('maintenance',this)">In Maintenance</button>
+    <button class="asset-filter px-3 py-1 text-[10px] font-black uppercase border border-slate-700 text-slate-400 hover:border-slate-500 transition-colors" data-filter="critical" onclick="filterAssets('critical',this)">Critical</button>
+  </div>
+  <!-- Equipment Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="equipment-grid">
+    <div class="asset-card bg-surface-container-low border border-slate-800 status-header-green hover:border-emerald-500/50 transition-all cursor-pointer" data-cat="underground" onclick="openEquipmentDetail('Sandvik DD422i','KHC-DR-001','Drill Rig','Level 4, South Wing','1,452.8','84','Active','Sipho Mahlangu','Quarterly service due in 215 hrs')">
+      <div class="p-4 border-b border-slate-800 flex justify-between items-start">
+        <div><div class="text-sm font-black text-on-surface">Sandvik DD422i</div><div class="text-[10px] text-slate-500 uppercase">Drill Rig · UG-D-402</div></div>
+        <span class="text-emerald-400">✓</span>
+      </div>
+      <div class="p-4 space-y-3">
+        <div class="grid grid-cols-2 gap-3 text-[10px]">
+          <div><div class="text-slate-500 uppercase font-bold mb-1">Location</div><div class="text-on-surface font-data-mono">Level 4, South Wing</div></div>
+          <div><div class="text-slate-500 uppercase font-bold mb-1">Engine Hours</div><div class="text-on-surface font-data-mono">1,452.8 hrs</div></div>
+        </div>
+        <div>
+          <div class="flex justify-between text-[10px] mb-1"><span class="text-slate-500 uppercase font-bold">Health Score</span><span class="text-emerald-400 font-bold">84%</span></div>
+          <div class="w-full bg-slate-800 h-1.5"><div class="bg-emerald-500 h-1.5 health-bar-fill" style="width:84%"></div></div>
+        </div>
+        <div class="flex items-center gap-2 pt-1 border-t border-slate-800"><span class="material-symbols-outlined text-slate-500 text-sm">person</span><span class="text-xs text-slate-300">Sipho Mahlangu</span></div>
+      </div>
+    </div>
+    <div class="asset-card bg-surface-container-low border border-slate-800 status-header-amber hover:border-yellow-500/50 transition-all cursor-pointer" data-cat="underground" onclick="openEquipmentDetail('CAT R1700','UG-L-112','Load-Haul-Dump','Sector 7G Ramp','3,892.4','71','Active — Warning','Johan Coetzee','Hydraulic flush overdue — scheduled 2024-05-20')">
+      <div class="p-4 border-b border-slate-800 flex justify-between items-start">
+        <div><div class="text-sm font-black text-on-surface">CAT R1700</div><div class="text-[10px] text-slate-500 uppercase">Load-Haul-Dump · UG-L-112</div></div>
+        <span class="text-yellow-400">⚠</span>
+      </div>
+      <div class="p-4 space-y-3">
+        <div class="grid grid-cols-2 gap-3 text-[10px]">
+          <div><div class="text-slate-500 uppercase font-bold mb-1">Location</div><div class="text-on-surface font-data-mono">Sector 7G Ramp</div></div>
+          <div><div class="text-slate-500 uppercase font-bold mb-1">Engine Hours</div><div class="text-on-surface font-data-mono">3,892.4 hrs</div></div>
+        </div>
+        <div>
+          <div class="flex justify-between text-[10px] mb-1"><span class="text-slate-500 uppercase font-bold">Health Score</span><span class="text-yellow-400 font-bold">71%</span></div>
+          <div class="w-full bg-slate-800 h-1.5"><div class="bg-yellow-500 h-1.5 health-bar-fill" style="width:71%"></div></div>
+        </div>
+        <div class="flex items-center gap-2 pt-1 border-t border-slate-800"><span class="material-symbols-outlined text-slate-500 text-sm">person</span><span class="text-xs text-slate-300">Johan Coetzee</span></div>
+      </div>
+    </div>
+    <div class="asset-card bg-surface-container-low border border-slate-800 status-header-red hover:border-red-500/50 transition-all cursor-pointer" data-cat="maintenance" onclick="openEquipmentDetail('Atlas Copco Boomer S2','UG-B-305','Drill Rig','Surface Workshop','5,110.1','42','In Maintenance','Maintenance Crew B','Transmission refurbishment — Est. return 2 days')">
+      <div class="p-4 border-b border-slate-800 flex justify-between items-start">
+        <div><div class="text-sm font-black text-on-surface">Atlas Copco Boomer S2</div><div class="text-[10px] text-slate-500 uppercase">Drill Rig · UG-B-305</div></div>
+        <span class="text-red-400">⚙</span>
+      </div>
+      <div class="p-4 space-y-3">
+        <div class="grid grid-cols-2 gap-3 text-[10px]">
+          <div><div class="text-slate-500 uppercase font-bold mb-1">Location</div><div class="text-on-surface font-data-mono">Surface Workshop</div></div>
+          <div><div class="text-slate-500 uppercase font-bold mb-1">Engine Hours</div><div class="text-on-surface font-data-mono">5,110.1 hrs</div></div>
+        </div>
+        <div>
+          <div class="flex justify-between text-[10px] mb-1"><span class="text-slate-500 uppercase font-bold">Health Score</span><span class="text-red-400 font-bold">42%</span></div>
+          <div class="w-full bg-slate-800 h-1.5"><div class="bg-red-500 h-1.5 health-bar-fill" style="width:42%"></div></div>
+        </div>
+        <div class="flex items-center gap-2 pt-1 border-t border-slate-800"><span class="material-symbols-outlined text-slate-500 text-sm">build</span><span class="text-xs text-slate-300">Maintenance Crew B</span></div>
+      </div>
+    </div>
+    <div class="asset-card bg-surface-container-low border border-slate-800 status-header-green hover:border-emerald-500/50 transition-all cursor-pointer" data-cat="surface" onclick="openEquipmentDetail('Komatsu HD785','SUR-T-021','Haul Truck','Pit North-East','12,145.0','88','Active','Thabo Mokoena','Tire rotation due 2024-05-22 — AI predicted')">
+      <div class="p-4 border-b border-slate-800 flex justify-between items-start">
+        <div><div class="text-sm font-black text-on-surface">Komatsu HD785</div><div class="text-[10px] text-slate-500 uppercase">Haul Truck · SUR-T-021</div></div>
+        <span class="text-emerald-400">✓</span>
+      </div>
+      <div class="p-4 space-y-3">
+        <div class="grid grid-cols-2 gap-3 text-[10px]">
+          <div><div class="text-slate-500 uppercase font-bold mb-1">Location</div><div class="text-on-surface font-data-mono">Pit North-East</div></div>
+          <div><div class="text-slate-500 uppercase font-bold mb-1">Engine Hours</div><div class="text-on-surface font-data-mono">12,145.0 hrs</div></div>
+        </div>
+        <div>
+          <div class="flex justify-between text-[10px] mb-1"><span class="text-slate-500 uppercase font-bold">Health Score</span><span class="text-emerald-400 font-bold">88%</span></div>
+          <div class="w-full bg-slate-800 h-1.5"><div class="bg-emerald-500 h-1.5 health-bar-fill" style="width:88%"></div></div>
+        </div>
+        <div class="flex items-center gap-2 pt-1 border-t border-slate-800"><span class="material-symbols-outlined text-slate-500 text-sm">person</span><span class="text-xs text-slate-300">Thabo Mokoena</span></div>
+      </div>
+    </div>
+    <div class="asset-card bg-surface-container-low border border-slate-800 status-header-green hover:border-emerald-500/50 transition-all cursor-pointer" data-cat="underground" onclick="openEquipmentDetail('Joy 12HM31','UG-M-501','Continuous Miner','Face 12, Panel A','2,230.5','91','Active','Palesa Dube','Next lube application 2024-05-25')">
+      <div class="p-4 border-b border-slate-800 flex justify-between items-start">
+        <div><div class="text-sm font-black text-on-surface">Joy 12HM31</div><div class="text-[10px] text-slate-500 uppercase">Cont. Miner · UG-M-501</div></div>
+        <span class="text-emerald-400">✓</span>
+      </div>
+      <div class="p-4 space-y-3">
+        <div class="grid grid-cols-2 gap-3 text-[10px]">
+          <div><div class="text-slate-500 uppercase font-bold mb-1">Location</div><div class="text-on-surface font-data-mono">Face 12, Panel A</div></div>
+          <div><div class="text-slate-500 uppercase font-bold mb-1">Engine Hours</div><div class="text-on-surface font-data-mono">2,230.5 hrs</div></div>
+        </div>
+        <div>
+          <div class="flex justify-between text-[10px] mb-1"><span class="text-slate-500 uppercase font-bold">Health Score</span><span class="text-emerald-400 font-bold">91%</span></div>
+          <div class="w-full bg-slate-800 h-1.5"><div class="bg-emerald-500 h-1.5 health-bar-fill" style="width:91%"></div></div>
+        </div>
+        <div class="flex items-center gap-2 pt-1 border-t border-slate-800"><span class="material-symbols-outlined text-slate-500 text-sm">person</span><span class="text-xs text-slate-300">Palesa Dube</span></div>
+      </div>
+    </div>
+    <div class="asset-card bg-surface-container-low border border-slate-800 status-header-red hover:border-red-500/50 transition-all cursor-pointer" data-cat="surface critical" onclick="openEquipmentDetail('Surface Conveyor B','SUR-C-002','Logistics Conveyor','Plant Feed Alpha','18,502.1','42','Warning — Deviation','Automated Monitoring','Belt tensioner re-alignment OVERDUE — Critical')">
+      <div class="p-4 border-b border-slate-800 flex justify-between items-start">
+        <div><div class="text-sm font-black text-on-surface">Surface Conveyor B</div><div class="text-[10px] text-slate-500 uppercase">Logistics · SUR-C-002</div></div>
+        <span class="text-red-400 blink">✗</span>
+      </div>
+      <div class="p-4 space-y-3">
+        <div class="grid grid-cols-2 gap-3 text-[10px]">
+          <div><div class="text-slate-500 uppercase font-bold mb-1">Location</div><div class="text-on-surface font-data-mono">Plant Feed Alpha</div></div>
+          <div><div class="text-slate-500 uppercase font-bold mb-1">Engine Hours</div><div class="text-on-surface font-data-mono">18,502.1 hrs</div></div>
+        </div>
+        <div>
+          <div class="flex justify-between text-[10px] mb-1"><span class="text-slate-500 uppercase font-bold">Health Score</span><span class="text-red-400 font-bold">42%</span></div>
+          <div class="w-full bg-slate-800 h-1.5"><div class="bg-red-500 h-1.5 health-bar-fill" style="width:42%"></div></div>
+        </div>
+        <div class="flex items-center gap-2 pt-1 border-t border-slate-800"><span class="material-symbols-outlined text-slate-500 text-sm">sensors</span><span class="text-xs text-slate-300">Automated Monitoring</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Work Orders Table -->
+  <div class="bg-surface-container-low border border-slate-800">
+    <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+      <div class="flex items-center gap-3">
+        <h2 class="text-label-caps tracking-widest text-yellow-500">Maintenance Work Orders</h2>
+        <span class="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[9px] font-black uppercase border border-blue-500/20">● AI Intelligence Active</span>
+      </div>
+      <button class="bg-yellow-500 text-black px-4 py-1 text-[10px] font-black uppercase flex items-center gap-2 hover:opacity-90 active:scale-95" onclick="openModal('New Work Order','<div class=\'space-y-3 text-xs\'><p><span class=\'text-slate-500\'>Asset Unit:</span> Select from fleet...</p><p><span class=\'text-slate-500\'>Priority:</span> Low / Medium / High / Critical</p><p><span class=\'text-slate-500\'>Type:</span> Scheduled / Corrective / AI-Predicted</p><p><span class=\'text-slate-500\'>Assign To:</span> Select technician...</p><p class=\'text-yellow-500\'>Form would submit to NexCore ERP database</p></div>')">+ New Order</button>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left">
+        <thead class="bg-surface-container border-b border-slate-800">
+          <tr>
+            <th class="p-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest cursor-pointer hover:text-slate-300" onclick="showToast('Sorting by Order ID','info')">Order ID ↕</th>
+            <th class="p-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Asset Unit</th>
+            <th class="p-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest cursor-pointer hover:text-slate-300" onclick="showToast('Sorting by Priority','info')">Priority ↕</th>
+            <th class="p-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Scheduled</th>
+            <th class="p-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Type</th>
+            <th class="p-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Assigned To</th>
+            <th class="p-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Status</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-800">
+          <tr class="hover:bg-slate-900/30 transition-colors cursor-pointer" onclick="showToast('WO-2024-001 — Hydraulic Flush opened','info')"><td class="p-3 text-xs font-data-mono text-yellow-500">WO-2024-001</td><td class="p-3 text-xs">UG-L-112 (CAT R1700)</td><td class="p-3"><span class="px-2 py-0.5 bg-orange-900/40 text-orange-400 text-[9px] font-black uppercase border border-orange-500/30">Medium</span></td><td class="p-3 text-xs font-data-mono text-slate-400">2024-05-20</td><td class="p-3 text-xs">Hydraulic Flush <span class="px-1 py-0.5 bg-blue-900/40 text-blue-400 text-[8px] font-black uppercase border border-blue-500/20 ml-1">AI-Predicted</span></td><td class="p-3 text-xs text-slate-300">J. Naidoo</td><td class="p-3"><span class="text-orange-400 text-[10px] font-bold uppercase">Pending</span></td></tr>
+          <tr class="hover:bg-slate-900/30 transition-colors cursor-pointer bg-red-950/10" onclick="showToast('WO-2024-005 — OVERDUE — Escalating to supervisor','warning')"><td class="p-3 text-xs font-data-mono text-yellow-500">WO-2024-005</td><td class="p-3 text-xs">SUR-C-002 (Conveyor B)</td><td class="p-3"><span class="px-2 py-0.5 bg-red-900/40 text-red-400 text-[9px] font-black uppercase border border-red-500/30">Critical</span></td><td class="p-3 text-xs font-data-mono text-red-400">2024-05-18</td><td class="p-3 text-xs">Belt Tensioner Re-align</td><td class="p-3 text-xs text-slate-300">L. Sibiya</td><td class="p-3"><span class="text-red-400 text-[10px] font-bold uppercase blink">Overdue</span></td></tr>
+          <tr class="hover:bg-slate-900/30 transition-colors cursor-pointer" onclick="showToast('WO-2024-009 — Quarterly Service details loaded','info')"><td class="p-3 text-xs font-data-mono text-yellow-500">WO-2024-009</td><td class="p-3 text-xs">UG-D-402 (Sandvik)</td><td class="p-3"><span class="px-2 py-0.5 bg-slate-800 text-slate-400 text-[9px] font-black uppercase border border-slate-700">Routine</span></td><td class="p-3 text-xs font-data-mono text-slate-400">2024-06-01</td><td class="p-3 text-xs">Quarterly Service</td><td class="p-3 text-xs text-slate-300">Team Alpha</td><td class="p-3"><span class="text-slate-400 text-[10px] font-bold uppercase">Scheduled</span></td></tr>
+          <tr class="hover:bg-slate-900/30 transition-colors cursor-pointer" onclick="showToast('WO-2024-012 — AI predicted tire rotation','info')"><td class="p-3 text-xs font-data-mono text-yellow-500">WO-2024-012</td><td class="p-3 text-xs">SUR-T-021 (Komatsu)</td><td class="p-3"><span class="px-2 py-0.5 bg-orange-900/40 text-orange-400 text-[9px] font-black uppercase border border-orange-500/30">Medium</span></td><td class="p-3 text-xs font-data-mono text-slate-400">2024-05-22</td><td class="p-3 text-xs">Tire Rotation <span class="px-1 py-0.5 bg-blue-900/40 text-blue-400 text-[8px] font-black uppercase border border-blue-500/20 ml-1">AI-Predicted</span></td><td class="p-3 text-xs text-slate-300">R. van Wyk</td><td class="p-3"><span class="text-orange-400 text-[10px] font-bold uppercase">Pending</span></td></tr>
+          <tr class="hover:bg-slate-900/30 transition-colors cursor-pointer" onclick="showToast('WO-2024-018 — Transmission refurb in progress','info')"><td class="p-3 text-xs font-data-mono text-yellow-500">WO-2024-018</td><td class="p-3 text-xs">UG-D-305 (Atlas)</td><td class="p-3"><span class="px-2 py-0.5 bg-red-900/40 text-red-400 text-[9px] font-black uppercase border border-red-500/30">Critical</span></td><td class="p-3 text-xs font-data-mono text-slate-400">2024-05-18</td><td class="p-3 text-xs">Transmission Refurb</td><td class="p-3 text-xs text-slate-300">Workshop 4</td><td class="p-3"><span class="text-blue-400 text-[10px] font-bold uppercase">In Progress</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <footer class="p-4 border-t border-slate-800 flex justify-between items-center text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+    <span>KHC Mines LLC — Gauteng, South Africa | NexCore ERP v3.1</span>
+    <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>MHSA Compliant</div>
+  </footer>
+</div>
+
+<!-- ==================== PAGE: WORKFORCE ==================== -->
+<div id="page-workforce" class="page p-6 space-y-6">
+  <div class="flex justify-between items-start">
+    <div>
+      <h1 class="text-xl font-black text-on-surface uppercase tracking-tight">Workforce Operations — 847 Total Employees</h1>
+      <div class="flex items-center gap-3 mt-1">
+        <span class="text-xs text-slate-500">📍 Gauteng Province, RSA</span>
+        <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase border border-emerald-500/20">MHSA Compliant</span>
+      </div>
+    </div>
+    <div class="flex gap-3">
+      <button class="bg-slate-800 border border-slate-700 text-slate-300 px-4 py-2 text-[10px] font-black uppercase hover:bg-slate-700 transition-colors" onclick="showToast('Generating workforce report PDF...','info')">Export Report</button>
+      <button class="bg-red-600 text-white px-4 py-2 text-[10px] font-black uppercase hover:bg-red-700 transition-colors" onclick="openModal('Emergency Broadcast','<div class=\'space-y-3 text-xs\'><p class=\'text-red-400 font-bold\'>⚠ This will broadcast to ALL 847 employees</p><p><span class=\'text-slate-500\'>Message Type:</span> Emergency / Safety Alert / General</p><p><span class=\'text-slate-500\'>Priority:</span> Critical</p><p><span class=\'text-slate-500\'>Channels:</span> PA System + Mobile + Underground Comms</p><p class=\'text-yellow-500\'>Confirm to broadcast immediately.</p></div>')">Emergency Broadcast</button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="bg-surface-container-low border border-slate-800 p-4 status-header-green">
+      <div class="text-label-caps text-slate-500 mb-2">Underground Right Now</div>
+      <div class="flex items-baseline gap-2"><span class="text-3xl font-data-mono font-bold text-on-surface">312</span><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span></div>
+      <div class="text-[10px] text-emerald-500 mt-1">+4.2% shift variance</div>
+    </div>
+    <div class="bg-surface-container-low border border-slate-800 p-4 status-header-green">
+      <div class="text-label-caps text-slate-500 mb-2">Days Without LTI</div>
+      <div class="text-3xl font-data-mono font-bold text-yellow-500">47</div>
+      <div class="text-[10px] text-slate-500 mt-1">Record: 124 Days</div>
+    </div>
+    <div class="bg-surface-container-low border border-slate-800 p-4 status-header-green">
+      <div class="text-label-caps text-slate-500 mb-2">Safety Compliance</div>
+      <div class="text-3xl font-data-mono font-bold text-emerald-500">96.2%</div>
+      <div class="w-full bg-slate-800 h-1 mt-2"><div class="bg-emerald-500 h-1" style="width:96.2%"></div></div>
+    </div>
+    <div class="bg-surface-container-low border border-slate-800 p-4 status-header-amber">
+      <div class="text-label-caps text-slate-500 mb-2">Pending Certs</div>
+      <div class="text-3xl font-data-mono font-bold text-orange-400">14</div>
+      <div class="text-[10px] text-orange-400 mt-1">Action Required: 48h</div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-12 gap-6">
+    <div class="col-span-12 lg:col-span-8 space-y-6">
+      <div class="bg-surface-container-low border border-slate-800">
+        <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+          <h2 class="text-label-caps tracking-widest text-yellow-500">Incident & Safety Log</h2>
+          <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase border border-emerald-500/20">Live Telemetry Active</span>
+        </div>
+        <table class="w-full text-left">
+          <thead class="bg-surface-container border-b border-slate-800">
+            <tr>
+              <th class="p-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Time</th>
+              <th class="p-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Category</th>
+              <th class="p-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Description</th>
+              <th class="p-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Investigator</th>
+              <th class="p-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Action</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800">
+            <tr class="hover:bg-slate-900/30 transition-colors cursor-pointer" onclick="openModal('Incident Report — Near Miss','<div class=\'space-y-2 text-xs\'><p><span class=\'text-slate-500\'>Time:</span> 11:04 SAST</p><p><span class=\'text-slate-500\'>Location:</span> Sector 4 Conveyor</p><p><span class=\'text-slate-500\'>Description:</span> Belt misalignment caused near-miss with maintenance worker. No injury sustained. PPE worn correctly.</p><p><span class=\'text-slate-500\'>Root Cause:</span> Under investigation</p><p><span class=\'text-slate-500\'>Investigator:</span> T. Nkosi</p><p><span class=\'text-slate-500\'>Status:</span> Open — Report due 17:00 SAST</p></div>')">
+              <td class="p-3 text-xs font-data-mono text-slate-400">11:04</td>
+              <td class="p-3"><span class="px-2 py-0.5 bg-orange-900/40 text-orange-400 text-[9px] font-black uppercase border border-orange-500/30">Near-Miss</span></td>
+              <td class="p-3 text-xs text-on-surface">Conveyor belt misalignment in Sector 4</td>
+              <td class="p-3 text-xs text-slate-300">T. Nkosi</td>
+              <td class="p-3 text-xs text-yellow-500 font-bold hover:underline">View</td>
+            </tr>
+            <tr class="hover:bg-slate-900/30 transition-colors cursor-pointer" onclick="openModal('Incident Report — Equipment Contact','<div class=\'space-y-2 text-xs\'><p><span class=\'text-slate-500\'>Time:</span> 09:12 SAST</p><p><span class=\'text-slate-500\'>Location:</span> UG-L-09 operating zone</p><p><span class=\'text-slate-500\'>Description:</span> LHD Unit scraped sidewall during reverse maneuver. No personnel injury. Minor vehicle damage.</p><p><span class=\'text-slate-500\'>MHSA Section:</span> Section 23 — Equipment Safety</p><p><span class=\'text-slate-500\'>Investigator:</span> P. van der Berg</p></div>')">
+              <td class="p-3 text-xs font-data-mono text-slate-400">09:12</td>
+              <td class="p-3"><span class="px-2 py-0.5 bg-red-900/40 text-red-400 text-[9px] font-black uppercase border border-red-500/30">Eqpt Contact</span></td>
+              <td class="p-3 text-xs text-on-surface">LHD Unit-09 scraped sidewall (No injury)</td>
+              <td class="p-3 text-xs text-slate-300">P. van der Berg</td>
+              <td class="p-3 text-xs text-yellow-500 font-bold hover:underline">View</td>
+            </tr>
+            <tr class="hover:bg-slate-900/30 transition-colors cursor-pointer" onclick="openModal('Incident Report — Gas Warning','<div class=\'space-y-2 text-xs\'><p><span class=\'text-slate-500\'>Time:</span> 06:45 SAST</p><p><span class=\'text-slate-500\'>Location:</span> Sector 7 Ventilation A</p><p><span class=\'text-slate-500\'>Description:</span> CO sensor spike detected. Auto-evacuation protocol activated. Area cleared within 4 minutes.</p><p><span class=\'text-slate-500\'>CO Level:</span> 52ppm (threshold: 35ppm)</p><p><span class=\'text-slate-500\'>Status:</span> Resolved — Area re-cleared at 07:15</p><p><span class=\'text-slate-500\'>Investigator:</span> T. Nkosi</p></div>')">
+              <td class="p-3 text-xs font-data-mono text-slate-400">06:45</td>
+              <td class="p-3"><span class="px-2 py-0.5 bg-blue-900/40 text-blue-400 text-[9px] font-black uppercase border border-blue-500/30">Gas Warning</span></td>
+              <td class="p-3 text-xs text-on-surface">CO sensor spike — Sector 7 Vent A</td>
+              <td class="p-3 text-xs text-slate-300">T. Nkosi</td>
+              <td class="p-3 text-xs text-yellow-500 font-bold hover:underline">View</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Shift Calendar -->
+      <div class="bg-surface-container-low border border-slate-800 p-4">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-label-caps tracking-widest text-yellow-500">Shift Rotation Calendar — June 2024</h2>
+          <div class="flex gap-2">
+            <button class="p-1 hover:text-white text-slate-500 transition-colors" onclick="showToast('Previous week','info')">←</button>
+            <button class="p-1 hover:text-white text-slate-500 transition-colors" onclick="showToast('Next week','info')">→</button>
+          </div>
+        </div>
+        <div class="grid grid-cols-7 gap-2">
+          <div class="text-center"><div class="text-[9px] text-slate-500 uppercase mb-2">Mon 10</div><div class="py-2 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[10px] font-black uppercase text-center cursor-pointer hover:bg-emerald-500/30" onclick="showToast('Shift A — Day — Thabo Nkosi lead','info')">Day</div></div>
+          <div class="text-center"><div class="text-[9px] text-slate-500 uppercase mb-2">Tue 11</div><div class="py-2 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[10px] font-black uppercase text-center cursor-pointer hover:bg-emerald-500/30" onclick="showToast('Shift A — Day — Thabo Nkosi lead','info')">Day</div></div>
+          <div class="text-center"><div class="text-[9px] text-slate-500 uppercase mb-2">Wed 12</div><div class="py-2 bg-blue-500/20 border border-blue-500/30 text-blue-400 text-[10px] font-black uppercase text-center cursor-pointer hover:bg-blue-500/30" onclick="showToast('Shift B — Night — P. van der Berg lead','info')">Night</div></div>
+          <div class="text-center"><div class="text-[9px] text-slate-500 uppercase mb-2">Thu 13</div><div class="py-2 bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 text-[10px] font-black uppercase text-center cursor-pointer hover:bg-yellow-500/30 font-black" onclick="showToast('Today — Shift B Night — Active','info')">Night</div></div>
+          <div class="text-center"><div class="text-[9px] text-slate-500 uppercase mb-2">Fri 14</div><div class="py-2 bg-slate-800 border border-slate-700 text-slate-500 text-[10px] font-black uppercase text-center cursor-pointer" onclick="showToast('Shift C — OFF rotation','info')">Off</div></div>
+          <div class="text-center"><div class="text-[9px] text-slate-500 uppercase mb-2">Sat 15</div><div class="py-2 bg-slate-800 border border-slate-700 text-slate-500 text-[10px] font-black uppercase text-center">Off</div></div>
+          <div class="text-center"><div class="text-[9px] text-slate-500 uppercase mb-2">Sun 16</div><div class="py-2 bg-slate-800 border border-slate-700 text-slate-500 text-[10px] font-black uppercase text-center">Off</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-span-12 lg:col-span-4 space-y-4">
+      <!-- MHSA Compliance -->
+      <div class="bg-surface-container-low border border-slate-800 p-4">
+        <h2 class="text-label-caps tracking-widest text-yellow-500 mb-4">MHSA Compliance Checks</h2>
+        <div class="grid grid-cols-2 gap-2">
+          <div class="p-3 bg-emerald-500/5 border border-emerald-500/20 cursor-pointer hover:bg-emerald-500/10" onclick="showToast('Risk Assessment — Daily submissions current','success')">
+            <div class="text-[9px] text-emerald-500 font-bold uppercase mb-1">Daily</div>
+            <div class="text-[11px] text-on-surface font-bold">Risk Assessment Submissions</div>
+            <div class="text-[9px] text-emerald-500 mt-1 font-bold">✓ PASS</div>
+          </div>
+          <div class="p-3 bg-red-900/20 border border-red-500/30 cursor-pointer hover:bg-red-900/30 blink" onclick="openModal('OVERDUE — Bi-Weekly Fire Drill','<div class=\'space-y-2 text-xs\'><p class=\'text-red-400 font-bold\'>⚠ OVERDUE by 3 days</p><p><span class=\'text-slate-500\'>Last Drill:</span> 2024-04-27</p><p><span class=\'text-slate-500\'>Required Frequency:</span> Every 14 days</p><p><span class=\'text-slate-500\'>MHSA Section:</span> Section 11.4</p><p class=\'text-orange-400\'>Schedule immediately to remain compliant.</p></div>')">
+            <div class="text-[9px] text-red-400 font-bold uppercase mb-1">Overdue</div>
+            <div class="text-[11px] text-on-surface font-bold">Bi-Weekly Fire Drill</div>
+            <div class="text-[9px] text-red-400 mt-1 font-bold">✗ OVERDUE</div>
+          </div>
+          <div class="p-3 bg-emerald-500/5 border border-emerald-500/20 cursor-pointer hover:bg-emerald-500/10" onclick="showToast('PPE Audit Shift A — Passed last inspection','success')">
+            <div class="text-[9px] text-emerald-500 font-bold uppercase mb-1">Pass</div>
+            <div class="text-[11px] text-on-surface font-bold">PPE Audit (Shift A)</div>
+            <div class="text-[9px] text-emerald-500 mt-1 font-bold">✓ PASS</div>
+          </div>
+          <div class="p-3 bg-emerald-500/5 border border-emerald-500/20 cursor-pointer hover:bg-emerald-500/10" onclick="showToast('First Aid recertification valid until Dec 2024','success')">
+            <div class="text-[9px] text-emerald-500 font-bold uppercase mb-1">Valid</div>
+            <div class="text-[11px] text-on-surface font-bold">First Aid Recertification</div>
+            <div class="text-[9px] text-emerald-500 mt-1 font-bold">✓ VALID</div>
+          </div>
+        </div>
+        <button class="w-full mt-3 py-2 bg-slate-800 border border-slate-700 text-slate-400 text-[10px] font-black uppercase hover:bg-slate-700 transition-colors" onclick="showToast('Launching full compliance audit...','info')">Launch Full Compliance Audit</button>
+      </div>
+
+      <!-- Duty Officer -->
+      <div class="bg-surface-container-low border border-slate-800 p-4">
+        <div class="flex items-center gap-2 mb-3"><span class="w-2 h-2 rounded-full bg-red-500 blink"></span><h2 class="text-label-caps tracking-widest text-red-400">Duty Safety Officer</h2></div>
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center font-black text-yellow-500 text-lg">PB</div>
+          <div>
+            <div class="text-sm font-bold text-on-surface">Petrus van der Berg</div>
+            <div class="text-xs text-slate-500 font-data-mono">+27 11 004 8821</div>
+            <div class="text-[10px] text-emerald-500 mt-1">● On Duty — Sector 7G</div>
+          </div>
+        </div>
+        <button class="w-full mt-3 py-2 bg-red-600/20 border border-red-500/30 text-red-400 text-[10px] font-black uppercase hover:bg-red-600/30 transition-colors" onclick="showToast('Calling Petrus van der Berg...','warning')">📞 Contact Now</button>
+      </div>
+    </div>
+  </div>
+  <footer class="p-4 border-t border-slate-800 flex justify-between items-center text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+    <span>KHC Mines LLC — Mining Health and Safety Act (MHSA) Compliant Platform</span>
+    <div class="flex gap-6"><span>NexCore ERP v3.1.2-build.84</span><span class="text-teal-400">Data Latency: 18ms (Real-time)</span></div>
+  </footer>
+</div>
+
+<!-- ==================== PAGE: COMPLIANCE ==================== -->
+<div id="page-compliance" class="page p-6 space-y-6">
+  <div class="flex justify-between items-start">
+    <div>
+      <h1 class="text-xl font-black text-on-surface uppercase tracking-tight">Reports & Compliance Center</h1>
+      <p class="text-xs text-slate-500 mt-1">KHC Mines LLC — MHSA | DMR | ISO 45001 | ESG Reporting</p>
+    </div>
+    <button class="bg-yellow-500 text-black px-4 py-2 text-[10px] font-black uppercase hover:opacity-90" onclick="showToast('Generating monthly compliance report...','success')">Generate Monthly Report</button>
+  </div>
+
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="bg-surface-container-low border border-slate-800 p-4 status-header-green cursor-pointer hover:border-emerald-500/40" onclick="showToast('MHSA compliance score: 96.2%','success')">
+      <div class="text-label-caps text-slate-500 mb-2">MHSA Score</div>
+      <div class="text-3xl font-data-mono font-bold text-emerald-500">96.2%</div>
+      <div class="text-[10px] text-emerald-500 mt-1">↑ 1.4% this month</div>
+    </div>
+    <div class="bg-surface-container-low border border-slate-800 p-4 status-header-green cursor-pointer hover:border-emerald-500/40" onclick="showToast('DMR submissions: all current','success')">
+      <div class="text-label-caps text-slate-500 mb-2">DMR Submissions</div>
+      <div class="text-3xl font-data-mono font-bold text-emerald-500">12/12</div>
+      <div class="text-[10px] text-emerald-500 mt-1">All current ✓</div>
+    </div>
+    <div class="bg-surface-container-low border border-slate-800 p-4 status-header-amber cursor-pointer hover:border-yellow-500/40" onclick="showToast('2 open audits pending review','warning')">
+      <div class="text-label-caps text-slate-500 mb-2">Open Audits</div>
+      <div class="text-3xl font-data-mono font-bold text-yellow-400">2</div>
+      <div class="text-[10px] text-yellow-400 mt-1">Pending review</div>
+    </div>
+    <div class="bg-surface-container-low border border-slate-800 p-4 status-header-green cursor-pointer hover:border-emerald-500/40" onclick="showToast('ESG score: 78/100 — Good standing','success')">
+      <div class="text-label-caps text-slate-500 mb-2">ESG Score</div>
+      <div class="text-3xl font-data-mono font-bold text-emerald-500">78/100</div>
+      <div class="text-[10px] text-emerald-500 mt-1">Good standing</div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-12 gap-6">
+    <div class="col-span-12 lg:col-span-7 bg-surface-container-low border border-slate-800">
+      <div class="p-4 border-b border-slate-800 bg-slate-900/50"><h2 class="text-label-caps tracking-widest text-yellow-500">Compliance Tracker — All Categories</h2></div>
+      <div class="p-4 space-y-3">
+        <div class="flex items-center justify-between p-3 bg-emerald-500/5 border border-emerald-500/20 cursor-pointer hover:bg-emerald-500/10" onclick="showToast('MHSA Section 11 — Risk Assessment: Compliant','success')">
+          <div class="flex items-center gap-3"><span class="text-emerald-400">✓</span><span class="text-xs font-bold text-on-surface">MHSA Section 11 — Risk Assessment</span></div>
+          <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase border border-emerald-500/20">Compliant</span>
+        </div>
+        <div class="flex items-center justify-between p-3 bg-orange-900/10 border border-orange-500/20 cursor-pointer hover:bg-orange-900/20" onclick="openModal('Emergency Evacuation Drill','<div class=\'space-y-2 text-xs\'><p><span class=\'text-slate-500\'>Status:</span> <span class=\'text-orange-400\'>Due in 8 days</span></p><p><span class=\'text-slate-500\'>Last Drill:</span> 2024-04-05</p><p><span class=\'text-slate-500\'>Required:</span> Monthly per MHSA Section 11.4</p><p><span class=\'text-slate-500\'>Schedule:</span> Book with Safety Officer</p></div>')">
+          <div class="flex items-center gap-3"><span class="text-orange-400">⚠</span><span class="text-xs font-bold text-on-surface">Emergency Evacuation Drill</span></div>
+          <span class="px-2 py-0.5 bg-orange-500/10 text-orange-400 text-[9px] font-black uppercase border border-orange-500/20">Due 8 Days</span>
+        </div>
+        <div class="flex items-center justify-between p-3 bg-red-900/10 border border-red-500/20 cursor-pointer hover:bg-red-900/20" onclick="openModal('Medical Surveillance Overdue','<div class=\'space-y-2 text-xs\'><p class=\'text-red-400 font-bold\'>⚠ 14 employees overdue annual medical</p><p><span class=\'text-slate-500\'>Employees:</span> See attached list</p><p><span class=\'text-slate-500\'>Risk:</span> Non-compliance with MHSA Section 13</p><p><span class=\'text-slate-500\'>Action:</span> Book clinic appointments immediately</p><p><span class=\'text-slate-500\'>Deadline:</span> 2024-05-31</p></div>')">
+          <div class="flex items-center gap-3"><span class="text-red-400">✗</span><span class="text-xs font-bold text-on-surface">Medical Surveillance (Annual)</span></div>
+          <span class="px-2 py-0.5 bg-red-500/10 text-red-400 text-[9px] font-black uppercase border border-red-500/20">14 Overdue</span>
+        </div>
+        <div class="flex items-center justify-between p-3 bg-emerald-500/5 border border-emerald-500/20 cursor-pointer hover:bg-emerald-500/10" onclick="showToast('PPE Audit — Last inspection passed','success')">
+          <div class="flex items-center gap-3"><span class="text-emerald-400">✓</span><span class="text-xs font-bold text-on-surface">PPE Audit (Full Fleet)</span></div>
+          <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase border border-emerald-500/20">Compliant</span>
+        </div>
+        <div class="flex items-center justify-between p-3 bg-orange-900/10 border border-orange-500/20 cursor-pointer hover:bg-orange-900/20" onclick="openModal('Blasting Certificates Expiring','<div class=\'space-y-2 text-xs\'><p class=\'text-orange-400\'>2 blasting certificates expiring within 30 days</p><p><span class=\'text-slate-500\'>Employee 1:</span> J. Sithole — Exp 2024-06-01</p><p><span class=\'text-slate-500\'>Employee 2:</span> R. Petersen — Exp 2024-06-14</p><p><span class=\'text-slate-500\'>Action:</span> Arrange re-certification training</p></div>')">
+          <div class="flex items-center gap-3"><span class="text-orange-400">⚠</span><span class="text-xs font-bold text-on-surface">Blasting Certificates</span></div>
+          <span class="px-2 py-0.5 bg-orange-500/10 text-orange-400 text-[9px] font-black uppercase border border-orange-500/20">2 Expiring</span>
+        </div>
+        <div class="flex items-center justify-between p-3 bg-emerald-500/5 border border-emerald-500/20 cursor-pointer hover:bg-emerald-500/10" onclick="showToast('Environmental Permit EMPr — Valid until 2025','success')">
+          <div class="flex items-center gap-3"><span class="text-emerald-400">✓</span><span class="text-xs font-bold text-on-surface">Environmental Permit EMPr</span></div>
+          <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase border border-emerald-500/20">Compliant</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-span-12 lg:col-span-5 space-y-4">
+      <div class="bg-surface-container-low border border-slate-800 p-4">
+        <h2 class="text-label-caps tracking-widest text-yellow-500 mb-4">Monthly Production Report</h2>
+        <div class="space-y-2">
+          <div class="flex justify-between text-xs border-b border-slate-800 pb-2"><span class="text-slate-500">Total Ore Mined (May)</span><span class="font-data-mono text-on-surface">74,820 tonnes</span></div>
+          <div class="flex justify-between text-xs border-b border-slate-800 pb-2"><span class="text-slate-500">Gold Recovered</span><span class="font-data-mono text-yellow-400">2.34 kg/tonne avg</span></div>
+          <div class="flex justify-between text-xs border-b border-slate-800 pb-2"><span class="text-slate-500">Operating Days</span><span class="font-data-mono text-on-surface">26 / 31</span></div>
+          <div class="flex justify-between text-xs border-b border-slate-800 pb-2"><span class="text-slate-500">Lost Time Injuries</span><span class="font-data-mono text-emerald-400">0</span></div>
+          <div class="flex justify-between text-xs border-b border-slate-800 pb-2"><span class="text-slate-500">Revenue (ZAR Est.)</span><span class="font-data-mono text-yellow-400">R 847,200,000</span></div>
+          <div class="flex justify-between text-xs pb-2"><span class="text-slate-500">Operating Cost</span><span class="font-data-mono text-on-surface">R 312,400,000</span></div>
+        </div>
+        <button class="w-full mt-3 py-2 bg-yellow-500 text-black text-[10px] font-black uppercase hover:opacity-90" onclick="showToast('Downloading May 2024 Production Report PDF...','success')">Download PDF Report</button>
+      </div>
+    </div>
+  </div>
+  <footer class="p-4 border-t border-slate-800 flex justify-between items-center text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+    <span>KHC Mines LLC — Gauteng, South Africa | NexCore ERP v3.1</span>
+    <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>MHSA Compliant</div>
+  </footer>
+</div>
+
+<!-- ==================== PAGE: AI INSIGHTS ==================== -->
+<div id="page-ai" class="page p-6 space-y-6">
+  <div>
+    <h1 class="text-xl font-black text-on-surface uppercase tracking-tight">KHC AI Operations Brain</h1>
+    <p class="text-xs text-slate-500 mt-1">Core Predictive Intelligence Hub | Sector 7G Integration</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-surface-container-low border border-blue-500/30 p-4 status-header-blue cursor-pointer hover:border-blue-500/60" onclick="showToast('Predictive Maintenance Agent — 47 assets monitored','info')">
+      <div class="flex items-center gap-3 mb-2"><span class="material-symbols-outlined text-blue-400 text-lg">engineering</span><div class="text-[10px] font-black text-blue-400 uppercase tracking-widest">Predictive Maintenance</div></div>
+      <div class="text-sm font-bold text-on-surface">2 Anomalies</div>
+      <div class="text-[10px] text-slate-500 mt-1">Drive Train B-42 exhibiting thermal drift</div>
+      <div class="flex items-center gap-2 mt-3"><span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span><span class="text-[9px] text-blue-400 font-bold uppercase">Active — 47 Assets Monitored</span></div>
+    </div>
+    <div class="bg-surface-container-low border border-yellow-500/30 p-4 status-header-amber cursor-pointer hover:border-yellow-500/60" onclick="openModal('Production Optimizer Recommendation','<div class=\'space-y-2 text-xs\'><p><span class=\'text-slate-500\'>Recommendation:</span> Adjust Conveyor RPM by +4% for optimal throughput</p><p><span class=\'text-slate-500\'>Confidence:</span> 87%</p><p><span class=\'text-slate-500\'>Expected gain:</span> +47 tonnes/shift</p><p><span class=\'text-slate-500\'>Risk:</span> Low — within operating parameters</p><p class=\'text-yellow-500\'>Click Confirm to apply automatically.</p></div>')">
+      <div class="flex items-center gap-3 mb-2"><span class="material-symbols-outlined text-yellow-400 text-lg">speed</span><div class="text-[10px] font-black text-yellow-400 uppercase tracking-widest">Production Optimizer</div></div>
+      <div class="text-sm font-bold text-on-surface">Shaft 4 Recommendation</div>
+      <div class="text-[10px] text-slate-500 mt-1">Adjust Conveyor RPM by +4% for optimal throughput</div>
+      <div class="flex items-center gap-2 mt-3"><span class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></span><span class="text-[9px] text-yellow-400 font-bold uppercase">Active — Optimizing</span></div>
+    </div>
+    <div class="bg-surface-container-low border border-red-500/30 p-4 status-header-red cursor-pointer hover:border-red-500/60" onclick="openModal('Safety Risk Predictor — Shaft 2','<div class=\'space-y-2 text-xs\'><p class=\'text-red-400 font-bold\'>⚠ Methane drift detected in Sub-Level 3</p><p><span class=\'text-slate-500\'>CH₄ Level:</span> 1.2% (threshold: 1.5%)</p><p><span class=\'text-slate-500\'>Trend:</span> Rising — 0.08%/hour</p><p><span class=\'text-slate-500\'>AI Prediction:</span> Threshold breach in ~3.75 hours</p><p><span class=\'text-slate-500\'>Recommendation:</span> Boost aux fans in Sub-Level 3 immediately</p><p class=\'text-orange-400\'>Pre-emptive action advised</p></div>')">
+      <div class="flex items-center gap-3 mb-2"><span class="material-symbols-outlined text-red-400 text-lg">verified_user</span><div class="text-[10px] font-black text-red-400 uppercase tracking-widest">Safety Risk Predictor</div></div>
+      <div class="text-sm font-bold text-on-surface">Shaft 2 Ventilation</div>
+      <div class="text-[10px] text-slate-500 mt-1">Methane drift detected — Boost aux-fans in Sub-Level 3</div>
+      <div class="flex items-center gap-2 mt-3"><span class="w-2 h-2 rounded-full bg-red-500 blink"></span><span class="text-[9px] text-red-400 font-bold uppercase">Alert — Action Required</span></div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-12 gap-6">
+    <!-- Maintenance Forecast -->
+    <div class="col-span-12 lg:col-span-7 bg-surface-container-low border border-slate-800">
+      <div class="p-4 border-b border-slate-800 bg-slate-900/50">
+        <h2 class="text-label-caps tracking-widest text-yellow-500">Asset Failure Forecast & Maintenance Windows</h2>
+        <div class="flex gap-4 mt-2">
+          <span class="flex items-center gap-1 text-[9px] text-red-400"><span class="w-3 h-2 bg-red-500/60 inline-block"></span> Failure Risk</span>
+          <span class="flex items-center gap-1 text-[9px] text-orange-400"><span class="w-3 h-2 bg-orange-500/60 inline-block"></span> Scheduled</span>
+        </div>
+      </div>
+      <div class="p-4 space-y-4">
+        <div class="cursor-pointer hover:bg-slate-900/20 p-2 transition-colors" onclick="openModal('LHD Loader #04 — Shaft 2 Detail','<div class=\'space-y-2 text-xs\'><p><span class=\'text-slate-500\'>Criticality:</span> <span class=\'text-red-400 font-bold\'>92%</span></p><p><span class=\'text-slate-500\'>Failure Type:</span> Hydraulic pump wear</p><p><span class=\'text-slate-500\'>Predicted Failure:</span> T+8 hours from now</p><p><span class=\'text-slate-500\'>Recommended Action:</span> Pull from service and replace pump assembly</p><p><span class=\'text-slate-500\'>Parts Status:</span> In stock — Workshop 4</p></div>')">
+          <div class="flex justify-between text-[10px] mb-2"><span class="text-slate-300 font-bold uppercase">LHD Loader #04 — Shaft 2</span><span class="text-red-400 font-bold">92% Criticality</span></div>
+          <div class="w-full bg-slate-800 h-5 flex">
+            <div class="bg-slate-700 h-full" style="width:30%"></div>
+            <div class="bg-orange-500/70 h-full" style="width:15%"></div>
+            <div class="bg-slate-700 h-full" style="width:20%"></div>
+            <div class="bg-red-500/60 h-full" style="width:20%"></div>
+            <div class="bg-slate-700 h-full" style="width:15%"></div>
+          </div>
+        </div>
+        <div class="cursor-pointer hover:bg-slate-900/20 p-2 transition-colors" onclick="openModal('Ventilation Fan V-09 — Shaft 4','<div class=\'space-y-2 text-xs\'><p><span class=\'text-slate-500\'>Status:</span> <span class=\'text-emerald-400 font-bold\'>Optimal</span></p><p><span class=\'text-slate-500\'>Next Service:</span> T+16 hours (scheduled)</p><p><span class=\'text-slate-500\'>AI Confidence:</span> 96% — No failure risk detected</p></div>')">
+          <div class="flex justify-between text-[10px] mb-2"><span class="text-slate-300 font-bold uppercase">Ventilation Fan V-09 — Shaft 4</span><span class="text-emerald-400 font-bold">Optimal</span></div>
+          <div class="w-full bg-slate-800 h-5 flex">
+            <div class="bg-slate-700 h-full" style="width:40%"></div>
+            <div class="bg-orange-500/70 h-full" style="width:10%"></div>
+            <div class="bg-slate-700 h-full" style="width:35%"></div>
+            <div class="bg-orange-500/40 h-full" style="width:8%"></div>
+            <div class="bg-slate-700 h-full" style="width:7%"></div>
+          </div>
+        </div>
+        <div class="cursor-pointer hover:bg-slate-900/20 p-2 transition-colors" onclick="openModal('Crusher Primary — Surface','<div class=\'space-y-2 text-xs\'><p><span class=\'text-slate-500\'>Status:</span> <span class=\'text-orange-400 font-bold\'>Maintenance Due Now</span></p><p><span class=\'text-slate-500\'>Issue:</span> Bearing wear detected T-16 hours ago</p><p><span class=\'text-slate-500\'>Risk:</span> Complete failure if not serviced within 24hrs</p><p><span class=\'text-slate-500\'>WO Created:</span> WO-2024-019 — In queue</p></div>')">
+          <div class="flex justify-between text-[10px] mb-2"><span class="text-slate-300 font-bold uppercase">Crusher Primary — Surface</span><span class="text-orange-400 font-bold blink">Maintenance Due</span></div>
+          <div class="w-full bg-slate-800 h-5 flex">
+            <div class="bg-red-500/60 h-full" style="width:35%"></div>
+            <div class="bg-slate-700 h-full" style="width:65%"></div>
+          </div>
+        </div>
+        <div class="flex justify-between text-[9px] text-slate-600 font-data-mono mt-2 px-2">
+          <span>T-24H</span><span>T-16H</span><span>T-8H</span><span class="text-yellow-500 font-bold">NOW</span><span>T+8H</span><span>T+16H</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Insights Feed -->
+    <div class="col-span-12 lg:col-span-5 bg-surface-container-low border border-slate-800">
+      <div class="p-4 border-b border-slate-800 bg-slate-900/50">
+        <h2 class="text-label-caps tracking-widest text-yellow-500 flex items-center gap-2"><span class="text-blue-400">✦</span> Actionable AI Insights Feed</h2>
+      </div>
+      <div class="p-4 space-y-3 overflow-y-auto max-h-96">
+        <div class="p-3 border border-slate-700 bg-slate-900/20 cursor-pointer hover:border-yellow-500/40 transition-colors" onclick="openModal('AI: Adjust Crusher Gap','<div class=\'space-y-2 text-xs\'><p><span class=\'text-slate-500\'>Category:</span> Asset / Crusher</p><p><span class=\'text-slate-500\'>Insight:</span> Incoming ore from Sector 3 is 15% denser than previous loads</p><p><span class=\'text-slate-500\'>Recommendation:</span> Reduce crusher gap by 4mm to maintain recovery efficiency</p><p><span class=\'text-slate-500\'>Confidence:</span> 91%</p><p><span class=\'text-slate-500\'>Expected impact:</span> +3.2% ore recovery rate</p></div>')">
+          <div class="flex justify-between items-start mb-2"><span class="text-[9px] text-slate-500 uppercase font-bold">Asset / Crusher</span><span class="text-[9px] text-slate-600 font-data-mono">0.2s ago</span></div>
+          <div class="text-xs font-bold text-on-surface mb-1">Adjust Crusher Gap for Ore Grade Deviation</div>
+          <div class="text-[11px] text-slate-400">Incoming ore batch 15% denser. AI suggests reducing gap by 4mm.</div>
+          <button class="mt-2 px-3 py-1 border border-yellow-500/50 text-yellow-500 text-[9px] font-black uppercase hover:bg-yellow-500/10 transition-colors" onclick="event.stopPropagation();showToast('Optimization scheduled — Crusher gap adjustment queued','success')">Execute Optimization</button>
+        </div>
+        <div class="p-3 border border-red-500/30 bg-red-950/20 cursor-pointer hover:border-red-500/60 transition-colors" onclick="openModal('AI: Seismic Tremor Alert','<div class=\'space-y-2 text-xs\'><p class=\'text-red-400 font-bold\'>⚠ Safety Critical</p><p><span class=\'text-slate-500\'>Location:</span> Pillar 4, West Wall</p><p><span class=\'text-slate-500\'>Risk:</span> 84% probability of rockfall within 4 hours</p><p><span class=\'text-slate-500\'>Recommendation:</span> Temporary evacuation of Level -1,400</p><p><span class=\'text-slate-500\'>Personnel affected:</span> 34 workers</p><p><span class=\'text-slate-500\'>Action:</span> Issue alert and evacuate immediately</p></div>')">
+          <div class="flex justify-between items-start mb-2"><span class="text-[9px] text-red-400 uppercase font-bold">Safety / Seismic</span><span class="text-[9px] text-slate-600 font-data-mono">12m ago</span></div>
+          <div class="text-xs font-bold text-on-surface mb-1">Micro-Seismic Tremor Clustering Detected</div>
+          <div class="text-[11px] text-slate-400">Cluster in Pillar 4, West Wall. 84% rockfall probability within 4 hours.</div>
+          <div class="flex gap-2 mt-2">
+            <button class="px-3 py-1 bg-red-600 text-white text-[9px] font-black uppercase hover:bg-red-700" onclick="event.stopPropagation();showToast('ALERT ISSUED — Evacuation initiated Level -1400','warning')">Issue Alert</button>
+            <button class="px-3 py-1 border border-slate-600 text-slate-400 text-[9px] font-black uppercase hover:bg-slate-800" onclick="event.stopPropagation();switchPage('shafts')">View Sensor Map</button>
+          </div>
+        </div>
+        <div class="p-3 border border-slate-700 bg-slate-900/20 cursor-pointer hover:border-yellow-500/40 transition-colors" onclick="openModal('AI: Eskom Peak Load Prediction','<div class=\'space-y-2 text-xs\'><p><span class=\'text-slate-500\'>Category:</span> Energy / ZAR Cost</p><p><span class=\'text-slate-500\'>Insight:</span> Eskom peak tariff pricing projected at 17:00 SAST</p><p><span class=\'text-slate-500\'>Recommendation:</span> Throttle secondary processing units 16:30–18:30</p><p><span class=\'text-slate-500\'>Saving:</span> R145,000/hour during peak</p><p><span class=\'text-slate-500\'>Confidence:</span> 96%</p></div>')">
+          <div class="flex justify-between items-start mb-2"><span class="text-[9px] text-slate-500 uppercase font-bold">Energy / ZAR Cost</span><span class="text-[9px] text-slate-600 font-data-mono">22m ago</span></div>
+          <div class="text-xs font-bold text-on-surface mb-1">Energy Peak Load Prediction (Eskom)</div>
+          <div class="text-[11px] text-slate-400">Peak pricing at 17:00. Throttle secondary units to save R145k/hr.</div>
+          <button class="mt-2 px-3 py-1 border border-yellow-500/50 text-yellow-500 text-[9px] font-black uppercase hover:bg-yellow-500/10" onclick="event.stopPropagation();showToast('Throttle schedule set for 16:30 SAST','success')">Schedule Throttle</button>
+        </div>
+        <div class="p-3 border border-slate-700 bg-slate-900/20 cursor-pointer hover:border-yellow-500/40 transition-colors" onclick="showToast('Auto re-order placed — 50 Grade 5 drill bits','success')">
+          <div class="flex justify-between items-start mb-2"><span class="text-[9px] text-slate-500 uppercase font-bold">Procurement / Logistics</span><span class="text-[9px] text-slate-600 font-data-mono">1h ago</span></div>
+          <div class="text-xs font-bold text-on-surface mb-1">Automated Re-order: Grade 5 Bits</div>
+          <div class="text-[11px] text-slate-400">Burn rate in Shaft 4 exceeded forecast. AI pre-filled order for 50 units.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Telemetry -->
+  <div class="bg-surface-container-lowest border border-slate-800">
+    <div class="p-3 border-b border-slate-800 flex justify-between items-center">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span class="text-[10px] text-emerald-500 font-black uppercase tracking-widest">Live Telemetry Stream | RAW_SENS_7G</span>
+      </div>
+      <span class="text-[9px] text-slate-500 font-data-mono">Buffer: 1024mb</span>
+    </div>
+    <div class="p-3 font-data-mono text-[10px] space-y-1 overflow-hidden" id="telemetry-feed" style="max-height:120px; overflow-y:auto">
+    </div>
+  </div>
+
+  <footer class="p-4 border-t border-slate-800 flex justify-between items-center text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+    <span>KHC Mines LLC — Gauteng, South Africa | NexCore ERP v3.1</span>
+    <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>MHSA Compliant</div>
+  </footer>
+</div>
+
+<!-- ==================== PAGE: SHAFTS (Sidebar) ==================== -->
+<div id="page-shafts" class="page p-6">
+  <h1 class="text-xl font-black text-on-surface uppercase mb-6">Shaft Monitor — All Active Shafts</h1>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div class="bg-surface-container-low border border-emerald-500/30 p-4 status-header-green cursor-pointer hover:border-emerald-500/60" onclick="openShaftDetail('SHAFT-NORTH','1,240m','48 workers','420 t/h','Active','Thabo Nkosi')">
+      <div class="flex justify-between mb-3"><span class="text-sm font-black text-yellow-500">SHAFT-NORTH</span><span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase border border-emerald-500/20">Active</span></div>
+      <div class="grid grid-cols-2 gap-3 text-xs"><div><div class="text-slate-500 mb-1">Depth</div><div class="font-data-mono text-on-surface">1,240m</div></div><div><div class="text-slate-500 mb-1">Personnel</div><div class="font-data-mono text-on-surface">48 workers</div></div><div><div class="text-slate-500 mb-1">Ore Rate</div><div class="font-data-mono text-emerald-400">420 t/h</div></div><div><div class="text-slate-500 mb-1">Supervisor</div><div class="font-data-mono text-on-surface">T. Nkosi</div></div></div>
+    </div>
+    <div class="bg-surface-container-low border border-emerald-500/30 p-4 status-header-green cursor-pointer hover:border-emerald-500/60" onclick="openShaftDetail('SHAFT-EAST','1,890m','62 workers','510 t/h','Active','Johan Coetzee')">
+      <div class="flex justify-between mb-3"><span class="text-sm font-black text-yellow-500">SHAFT-EAST</span><span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase border border-emerald-500/20">Active</span></div>
+      <div class="grid grid-cols-2 gap-3 text-xs"><div><div class="text-slate-500 mb-1">Depth</div><div class="font-data-mono text-on-surface">1,890m</div></div><div><div class="text-slate-500 mb-1">Personnel</div><div class="font-data-mono text-on-surface">62 workers</div></div><div><div class="text-slate-500 mb-1">Ore Rate</div><div class="font-data-mono text-emerald-400">510 t/h</div></div><div><div class="text-slate-500 mb-1">Supervisor</div><div class="font-data-mono text-on-surface">J. Coetzee</div></div></div>
+    </div>
+    <div class="bg-surface-container-low border border-orange-500/30 p-4 status-header-amber cursor-pointer hover:border-orange-500/60" onclick="openShaftDetail('WEST-AUX','920m','8 workers','--','Maintenance','Pieter van der Berg')">
+      <div class="flex justify-between mb-3"><span class="text-sm font-black text-yellow-500">WEST-AUX</span><span class="px-2 py-0.5 bg-orange-500/10 text-orange-400 text-[9px] font-black uppercase border border-orange-500/20">Maintenance</span></div>
+      <div class="grid grid-cols-2 gap-3 text-xs"><div><div class="text-slate-500 mb-1">Depth</div><div class="font-data-mono text-on-surface">920m</div></div><div><div class="text-slate-500 mb-1">Personnel</div><div class="font-data-mono text-on-surface">8 workers</div></div><div><div class="text-slate-500 mb-1">Ore Rate</div><div class="font-data-mono text-orange-400">--</div></div><div><div class="text-slate-500 mb-1">Supervisor</div><div class="font-data-mono text-on-surface">P. van der Berg</div></div></div>
+    </div>
+    <div class="bg-surface-container-low border border-emerald-500/30 p-4 status-header-green cursor-pointer hover:border-emerald-500/60" onclick="openShaftDetail('CENTRAL-CORE','2,450m','94 workers','890 t/h','Active','Nomvula Dlamini')">
+      <div class="flex justify-between mb-3"><span class="text-sm font-black text-yellow-500">CENTRAL-CORE</span><span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase border border-emerald-500/20">Active</span></div>
+      <div class="grid grid-cols-2 gap-3 text-xs"><div><div class="text-slate-500 mb-1">Depth</div><div class="font-data-mono text-on-surface">2,450m</div></div><div><div class="text-slate-500 mb-1">Personnel</div><div class="font-data-mono text-on-surface">94 workers</div></div><div><div class="text-slate-500 mb-1">Ore Rate</div><div class="font-data-mono text-emerald-400">890 t/h</div></div><div><div class="text-slate-500 mb-1">Supervisor</div><div class="font-data-mono text-on-surface">N. Dlamini</div></div></div>
+    </div>
+    <div class="bg-surface-container-low border border-emerald-500/30 p-4 status-header-green cursor-pointer hover:border-emerald-500/60" onclick="openShaftDetail('DEEP-LEVEL-01','3,100m','54 workers','340 t/h','Active','Sipho Mahlangu')">
+      <div class="flex justify-between mb-3"><span class="text-sm font-black text-yellow-500">DEEP-LEVEL-01</span><span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase border border-emerald-500/20">Active</span></div>
+      <div class="grid grid-cols-2 gap-3 text-xs"><div><div class="text-slate-500 mb-1">Depth</div><div class="font-data-mono text-on-surface">3,100m</div></div><div><div class="text-slate-500 mb-1">Personnel</div><div class="font-data-mono text-on-surface">54 workers</div></div><div><div class="text-slate-500 mb-1">Ore Rate</div><div class="font-data-mono text-emerald-400">340 t/h</div></div><div><div class="text-slate-500 mb-1">Supervisor</div><div class="font-data-mono text-on-surface">S. Mahlangu</div></div></div>
+    </div>
+    <div class="bg-surface-container-low border border-slate-700 p-4 cursor-pointer hover:border-slate-600" onclick="openShaftDetail('RESERVE-STK','450m','12 workers','--','Idle','—')">
+      <div class="flex justify-between mb-3"><span class="text-sm font-black text-slate-400">RESERVE-STK</span><span class="px-2 py-0.5 bg-slate-800 text-slate-400 text-[9px] font-black uppercase border border-slate-700">Idle</span></div>
+      <div class="grid grid-cols-2 gap-3 text-xs"><div><div class="text-slate-500 mb-1">Depth</div><div class="font-data-mono text-slate-500">450m</div></div><div><div class="text-slate-500 mb-1">Personnel</div><div class="font-data-mono text-slate-500">12 workers</div></div><div><div class="text-slate-500 mb-1">Ore Rate</div><div class="font-data-mono text-slate-500">--</div></div><div><div class="text-slate-500 mb-1">Supervisor</div><div class="font-data-mono text-slate-500">—</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: BLAST (Sidebar) ==================== -->
+<div id="page-blast" class="page p-6">
+  <h1 class="text-xl font-black text-on-surface uppercase mb-6">Blast Schedule — Full Calendar</h1>
+  <div class="bg-surface-container-low border border-slate-800 p-6">
+    <div class="space-y-4">
+      <div class="p-4 border border-emerald-500/30 bg-emerald-500/5 cursor-pointer hover:bg-emerald-500/10" onclick="showToast('Blast 1 completed successfully — 480t displaced','success')">
+        <div class="flex justify-between items-start"><div><div class="text-sm font-black text-on-surface">Sector 7G North Face</div><div class="text-xs text-slate-500 mt-1 font-data-mono">Charge: 840kg ANFO | Completed 11:42 SAST</div></div><span class="px-3 py-1 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase border border-emerald-500/20">Completed</span></div>
+      </div>
+      <div class="p-4 border border-yellow-500/30 bg-yellow-500/5 cursor-pointer hover:bg-yellow-500/10" onclick="openModal('Upcoming Blast — Deep Level Shaft 4','<div class=\'space-y-2 text-xs\'><p><span class=\'text-slate-500\'>Time:</span> 16:00 SAST</p><p><span class=\'text-slate-500\'>Charge:</span> 1,120kg ANFO</p><p><span class=\'text-slate-500\'>Clearance:</span> Sipho Mahlangu — Approved</p><p><span class=\'text-slate-500\'>Personnel:</span> 54 workers evacuated to surface</p><p class=\'text-yellow-500\'>Blast in 1h 30m</p></div>')">
+        <div class="flex justify-between items-start"><div><div class="text-sm font-black text-on-surface">Deep Level Shaft 4</div><div class="text-xs text-slate-500 mt-1 font-data-mono">Charge: 1,120kg ANFO | Scheduled 16:00 SAST</div></div><span class="px-3 py-1 bg-yellow-500/10 text-yellow-500 text-[9px] font-black uppercase border border-yellow-500/20">Upcoming</span></div>
+      </div>
+      <div class="p-4 border border-orange-500/30 bg-orange-500/5 cursor-pointer hover:bg-orange-500/10" onclick="openModal('Pending Blast — Reserve East Extension','<div class=\'space-y-2 text-xs\'><p class=\'text-orange-400\'>⚠ Awaiting MHSA inspector sign-off</p><p><span class=\'text-slate-500\'>Time:</span> 22:30 SAST</p><p><span class=\'text-slate-500\'>Inspector:</span> Nomvula Dlamini</p><p class=\'text-slate-500\'>Cannot proceed without clearance</p></div>')">
+        <div class="flex justify-between items-start"><div><div class="text-sm font-black text-on-surface">Reserve East Extension</div><div class="text-xs text-slate-500 mt-1 font-data-mono">Charge: 650kg ANFO | Scheduled 22:30 SAST</div></div><span class="px-3 py-1 bg-orange-500/10 text-orange-400 text-[9px] font-black uppercase border border-orange-500/20">Pending Approval</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: LOGS ==================== -->
+<div id="page-logs" class="page p-6">
+  <h1 class="text-xl font-black text-on-surface uppercase mb-6">System Logs — NexCore ERP</h1>
+  <div class="bg-surface-container-lowest border border-slate-800 p-4 font-data-mono text-xs space-y-1" id="system-logs">
+    <div class="text-emerald-400">[2024-05-13 14:30:01] SYSTEM: NexCore ERP v3.1 — Session active</div>
+    <div class="text-slate-400">[2024-05-13 14:28:12] ALERT: Ventilation sensor threshold breach — Shaft 4 Sub-Level 2</div>
+    <div class="text-blue-400">[2024-05-13 14:25:00] AI: Predictive maintenance model updated — 47 assets re-analyzed</div>
+    <div class="text-slate-400">[2024-05-13 14:15:05] ALERT: Conveyor motor temperature deviation — SUR-C-002</div>
+    <div class="text-yellow-400">[2024-05-13 14:00:00] SHIFT: Shift 2B handover complete — 312 underground personnel confirmed</div>
+    <div class="text-slate-400">[2024-05-13 13:58:44] AI: Crusher bearing anomaly detected — WO-2024-019 auto-created</div>
+    <div class="text-emerald-400">[2024-05-13 13:45:22] ACCESS: Nomvula Dlamini logged in — Station 04</div>
+    <div class="text-slate-400">[2024-05-13 13:00:00] PRODUCTION: Daily target 92% achieved — 2,610 tonnes as of midday</div>
+    <div class="text-blue-400">[2024-05-13 12:00:00] AI: Eskom peak load forecast generated — Throttle recommendation queued</div>
+    <div class="text-emerald-400">[2024-05-13 11:42:00] BLAST: Sector 7G North Face blast completed — All clear issued</div>
+  </div>
+</div>
+
+</main>
+
+<script>
+// ==================== PAGE NAVIGATION ====================
+function switchPage(page) {
+  // Hide all pages
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  // Show target page
+  const target = document.getElementById('page-' + page);
+  if (target) {
+    target.classList.add('active');
+    target.style.animation = 'fadeIn 0.2s ease';
+  }
+  // Update top nav
+  document.querySelectorAll('.nav-link').forEach(link => {
+    if (link.dataset.page === page) {
+      link.classList.add('text-yellow-500', 'border-b-2', 'border-yellow-500');
+      link.classList.remove('text-slate-400');
+    } else {
+      link.classList.remove('text-yellow-500', 'border-b-2', 'border-yellow-500');
+      link.classList.add('text-slate-400');
+    }
+  });
+  // Update sidebar
+  document.querySelectorAll('.sidebar-link').forEach(link => {
+    if (link.dataset.page === page) {
+      link.classList.add('bg-slate-900', 'text-yellow-500', 'border-l-4', 'border-yellow-500');
+      link.classList.remove('text-slate-500');
+    } else {
+      link.classList.remove('bg-slate-900', 'text-yellow-500', 'border-l-4', 'border-yellow-500');
+      link.classList.add('text-slate-500');
+    }
+  });
+  // Scroll to top
+  document.querySelector('main').scrollTop = 0;
+}
+
+// ==================== CLOCK ====================
+function updateClock() {
+  const now = new Date();
+  const sast = new Date(now.getTime() + (2 * 60 * 60 * 1000));
+  const h = String(sast.getUTCHours()).padStart(2,'0');
+  const m = String(sast.getUTCMinutes()).padStart(2,'0');
+  const s = String(sast.getUTCSeconds()).padStart(2,'0');
+  document.getElementById('live-clock').textContent = h + ':' + m + ':' + s + ' SAST';
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ==================== TOAST ====================
+function showToast(msg, type) {
+  const toast = document.getElementById('toast');
+  const icon = document.getElementById('toast-icon');
+  const msgEl = document.getElementById('toast-msg');
+  const icons = { success:'check_circle', warning:'warning', info:'info', error:'error' };
+  icon.textContent = icons[type] || 'info';
+  icon.className = 'material-symbols-outlined text-sm ' + (type === 'success' ? 'text-emerald-400' : type === 'warning' ? 'text-orange-400' : type === 'error' ? 'text-red-400' : 'text-blue-400');
+  msgEl.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+function hideToast() { document.getElementById('toast').classList.remove('show'); }
+
+// ==================== MODAL ====================
+function openModal(title, body) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = body;
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  showToast('Action confirmed', 'success');
+}
+
+// ==================== SHAFT DETAIL ====================
+function openShaftDetail(name, depth, staff, rate, status, supervisor) {
+  const statusColor = status === 'Active' ? 'text-emerald-400' : status === 'Maintenance' ? 'text-orange-400' : 'text-slate-400';
+  openModal('Shaft Detail — ' + name, 
+    '<div class="space-y-2 text-xs">' +
+    '<p><span class="text-slate-500">Shaft ID:</span> ' + name + '</p>' +
+    '<p><span class="text-slate-500">Depth:</span> ' + depth + '</p>' +
+    '<p><span class="text-slate-500">Personnel Underground:</span> ' + staff + '</p>' +
+    '<p><span class="text-slate-500">Ore Rate:</span> ' + rate + '</p>' +
+    '<p><span class="text-slate-500">Status:</span> <span class="' + statusColor + ' font-bold">' + status + '</span></p>' +
+    '<p><span class="text-slate-500">Supervisor:</span> ' + supervisor + '</p>' +
+    '<p><span class="text-slate-500">Last Inspection:</span> Today 08:30 SAST</p>' +
+    '<p><span class="text-slate-500">Ventilation:</span> Normal</p>' +
+    '</div>'
+  );
+}
+
+// ==================== EQUIPMENT DETAIL ====================
+function openEquipmentDetail(name, id, type, location, hours, health, status, operator, notes) {
+  const healthColor = parseInt(health) >= 80 ? 'text-emerald-400' : parseInt(health) >= 60 ? 'text-yellow-400' : 'text-red-400';
+  openModal(name + ' — ' + id,
+    '<div class="space-y-2 text-xs">' +
+    '<p><span class="text-slate-500">Unit ID:</span> ' + id + '</p>' +
+    '<p><span class="text-slate-500">Type:</span> ' + type + '</p>' +
+    '<p><span class="text-slate-500">Location:</span> ' + location + '</p>' +
+    '<p><span class="text-slate-500">Engine Hours:</span> ' + hours + ' hrs</p>' +
+    '<p><span class="text-slate-500">Health Score:</span> <span class="' + healthColor + ' font-bold">' + health + '%</span></p>' +
+    '<p><span class="text-slate-500">Status:</span> ' + status + '</p>' +
+    '<p><span class="text-slate-500">Operator:</span> ' + operator + '</p>' +
+    '<p class="text-yellow-400 mt-2">📋 ' + notes + '</p>' +
+    '</div>'
+  );
+}
+
+// ==================== ASSET FILTER ====================
+function filterAssets(cat, btn) {
+  document.querySelectorAll('.asset-filter').forEach(b => {
+    b.classList.remove('bg-yellow-500', 'text-black', 'border-yellow-500');
+    b.classList.add('border-slate-700', 'text-slate-400');
+  });
+  btn.classList.add('bg-yellow-500', 'text-black', 'border-yellow-500');
+  btn.classList.remove('border-slate-700', 'text-slate-400');
+  document.querySelectorAll('.asset-card').forEach(card => {
+    if (cat === 'all' || card.dataset.cat.includes(cat)) {
+      card.style.display = 'block';
+    } else {
+      card.style.display = 'none';
+    }
+  });
+  showToast('Filter: ' + (cat === 'all' ? 'All Equipment' : cat.charAt(0).toUpperCase() + cat.slice(1)), 'info');
+}
+
+// ==================== ALERTS ====================
+function showAlerts() {
+  openModal('Live System Alerts (3 Active)',
+    '<div class="space-y-3 text-xs">' +
+    '<div class="p-2 border border-red-500/30 text-red-400">⚠ CRITICAL: Ventilation drop — Shaft 4 Sub-Level 2</div>' +
+    '<div class="p-2 border border-orange-500/30 text-orange-400">⚠ WARNING: Conveyor motor heat — SUR-C-002 (82°C)</div>' +
+    '<div class="p-2 border border-blue-500/30 text-blue-400">ℹ AI: Crusher bearing failure predicted 48-72hrs</div>' +
+    '</div>'
+  );
+}
+function dismissAlert(event, btn) {
+  event.stopPropagation();
+  const card = btn.closest('div.p-3');
+  card.style.opacity = '0';
+  card.style.transition = 'opacity 0.3s';
+  setTimeout(() => { card.remove(); }, 300);
+  const count = document.getElementById('alert-count');
+  const n = parseInt(count.textContent) - 1;
+  count.textContent = String(n).padStart(2,'0');
+  showToast('Alert dismissed', 'success');
+}
+function refreshShafts() {
+  showToast('Shaft data refreshed — All readings current', 'success');
+}
+
+// ==================== TELEMETRY FEED ====================
+const telemetryLines = [
+  { t: 'VENT_SENS_001', v: 'AIR_FLOW 4.65 m/s | TEMP 28.2C | HUM 88% --STABLE', c: 'text-emerald-400' },
+  { t: 'VIBE_LHD_42', v: 'RPM__AXLE 1840 | HEAT_GEAR 88.4C | TORQUE 440Nm --VAR_DRIFT', c: 'text-orange-400' },
+  { t: 'SEIS_WALL_09', v: 'MAG 0.2 | FREQ 4.4Hz | TENSION_INDEX 14.5 --WATCH', c: 'text-yellow-400' },
+  { t: 'SURF_TEMP_RAD', v: 'AMB 34.1C | CORE 22.0C | REFRIG_CAP 92% --NOMINAL', c: 'text-emerald-400' },
+  { t: 'HYD_LINE_4', v: 'PSI_DROP -12% | FLOW_RATE 0.08m/s --LEAK_POSSIBLE', c: 'text-red-400' },
+  { t: 'POWER_GRID_67', v: 'VOLT 14kV | AMP 140 | PWR_FAC 0.98 --STABLE', c: 'text-emerald-400' },
+  { t: 'GAS_SENS_S2L3', v: 'CH4 1.2% | CO 12ppm | O2 20.1% --MONITORING', c: 'text-yellow-400' },
+  { t: 'CRUSH_PRIM_01', v: 'RPM 220 | TEMP_BEAR 91C | VIBR 2.1g --ANOMALY', c: 'text-red-400' },
+];
+let telIdx = 0;
+function addTelemetry() {
+  const feed = document.getElementById('telemetry-feed');
+  if (!feed) return;
+  const now = new Date();
+  const sast = new Date(now.getTime() + (2 * 60 * 60 * 1000));
+  const t = String(sast.getUTCHours()).padStart(2,'0') + ':' + String(sast.getUTCMinutes()).padStart(2,'0') + ':' + String(sast.getUTCSeconds()).padStart(2,'0');
+  const line = telemetryLines[telIdx % telemetryLines.length];
+  const div = document.createElement('div');
+  div.className = 'telemetry-line ' + line.c;
+  div.textContent = '[' + t + '] ' + line.t + ': ' + line.v;
+  feed.insertBefore(div, feed.firstChild);
+  if (feed.children.length > 20) feed.removeChild(feed.lastChild);
+  telIdx++;
+}
+setInterval(addTelemetry, 2000);
+addTelemetry();
+
+// Init with dashboard active
+switchPage('dashboard');
+</script>
+</body>
+</html>
